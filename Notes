@@ -1,0 +1,74 @@
+#Notes:  
+
+Gyms:  
+
+https://github.com/dickreuter/neuron_poker –  openai like gym environment for poker. 
+
+https://github.com/EricSteinberger/PokerRL/ - poker RL gym 
+
+https://github.com/Farama-Foundation/Gymnasium openai gym 
+
+https://github.com/deepmind/open_spiel deepmind openspiel evn (mostly for board games) 
+
+ 
+
+https://github.com/deepmind/meltingpot - deepmind multiagent RL gym 
+
+ 
+
+https://www.reddit.com/r/reinforcementlearning/comments/12yuj5i/shimmy_10_gymnasium_pettingzoo_bindings_for/ 
+
+ 
+
+ 
+
+ 
+
+Resources 
+
+ 
+
+https://goattack.far.ai/adversarial-policy-katago?row=0#no_search-boardhttps://goattack.far.ai/adversarial-policy-katago?row=0#no_search-board –  - K Adverrsa 
+
+ 
+
+https://www.ijcai.org/proceedings/2022/0484.pdfhttps://www.ijcai.org/proceedings/2022/0484.pdfhttps://www.ijcai.org/proceedings/2022/0484.pdf 
+
+ 
+
+ 
+
+https://goattack.far.ai/adversarial-policy-katago?row=0#no_search-board – https://arxiv.org/abs/2211.00241 Adversarial Policy beat KataGo 
+
+  
+
+Adversarial policies - https://arxiv.org/abs/1905.10615 
+https://www.usenix.org/conference/usenixsecurity21/presentation/wu-xian 
+
+https://github.com/HumanCompatibleAI/adversarial-policies  
+
+  
+
+  
+
+  
+
+Learning best response - poker AI: 
+
+https://www.ijcai.org/proceedings/2022/0484.pdf   
+
+Defense against two players adversarial policy: 
+
+https://www.usenix.org/system/files/usenixsecurity23-guo-wenbo.pdf 
+
+Population based training to reduce explotibility:  
+
+https://www.czemp.in/publication/reducing-exploitability/ 
+
+ 
+
+ 
+
+ 
+
+ 

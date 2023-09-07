@@ -1,0 +1,62 @@
+Title: Adversarial attacks in deep reinforcement learning 
+
+:::: Description :::: 
+
+The course is structured around independent study and research, focusing on understanding adversarial attacks in (deep) reinforcement learning systems. 
+
+The course will take outset in the following curriculum/papers, but may deviate as the course progresses: https://ieeexplore.ieee.org/document/9536399, https://arxiv.org/abs/2101.08452,  
+
+https://arxiv.org/pdf/2209.08025.pdf, https://dl.acm.org/doi/full/10.1145/3547330. 
+
+ 
+
+:::: Learning objectives ::::: 
+
+Understand and explain various security vulnerabilities and adversarial attacks in (deep) reinforcement learning settings. 
+
+Scope and define a relevant study of adversarial attacks in DRL, particularly identifying a relevant set of adversarial attacks and specific algorithms to be studied. 
+
+Identify or create a suitable simulation environment for examining a relevant set of adversarial attacks. 
+
+Understand, implement, and evaluate a suitable set of algorithms for studying adversarial attacks (in a simulation environment). 
+
+Concisely document and analyze the results using appropriate methods.  
+
+Create, maintain, and present code professionally with version control practices. 
+
+ 
+
+::::::: Period :::::  
+
+TBD-TBD 
+
+::: Assessment ::::  
+
+Type: A private Gitlab repo (with the relevant presentation of theory/analysis/results as markdown/notebooks) and an oral examination. 
+
+Evaluation: pass/fail, internal examiner.  
+
+Points (ECTS): 5 
+
+Level: MSc 
+
+:::: Pre-requisites :::: 
+
+Required:  
+
+Demonstrated practical and theoretical understanding of deep learning (e.g., https://www.deeplearningbook.org/) 
+
+Demonstrated practical and theoretical understanding of basic reinforcement learning (e.g., based on Ch 3-9 in http://incompleteideas.net/book/RLbook2020.pdf  
+
+Note: If no formal evidence can be provided (e.g., courses, projects), a short interview will be conducted with the course responsible before a student can be admitted to the course.  
+
+Recommended: 02456 Deep learning, 02465 Introduction to reinforcement learning and control 
+
+ 
+
+:::: Course responsible :::: 
+
+Bjørn Sand Jensen, bjje@dtu.dk 
+
+ 
+
