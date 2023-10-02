@@ -8,7 +8,7 @@ Adversarial attacks in deep reinforcement learning
 
 # Checklist 
 - [ ] Write half-page about project
-- [ ] Connect to HCP
+- [X] Connect to HCP
 **Code**
 - [X] Run 2 random pong agents env 
 - [X] Run human vs agent env
