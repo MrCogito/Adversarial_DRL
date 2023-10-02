@@ -1,3 +1,4 @@
+print("Script started")
 from pettingzoo.atari import pong_v3
 import torch
 import torch.nn as nn
@@ -49,7 +50,7 @@ class PPOAgent(nn.Module):
         log_prob = m.log_prob(action)
         return action.item(), log_prob, value.squeeze()
 
-def train_ppo(agent, env, optimizer, epochs=1, gamma=0.99):
+def train_ppo(agent, env, optimizer, epochs=100, gamma=0.99):
     for epoch in range(epochs):
         observations, _ = env.reset()
         done = {'first_0': False, 'second_0': False}
@@ -57,6 +58,9 @@ def train_ppo(agent, env, optimizer, epochs=1, gamma=0.99):
         epoch_policy_loss = 0
         epoch_value_loss = 0
         step_counter = 0
+        if epoch % 10 == 0:  # Save the model every 10 epochs
+            print(f"Epoch: {epoch}, Total Reward: {total_reward}, Policy Loss: {epoch_policy_loss}, Value Loss: {epoch_value_loss}")
+            torch.save(agent.state_dict(), f'/zhome/59/9/198225/Adversarial_DRL/agents/trained_agent_epoch_{epoch}.pth')
         while not all(done.values()):
             step_counter += 1  # Increment step counter
             if step_counter % 100 == 0:  # Print progress every 'print_interval' steps
@@ -101,4 +105,4 @@ optimizer = optim.Adam(agent.parameters(), lr=1e-2)
 
 # Train the agent
 train_ppo(agent, env, optimizer)
-torch.save(agent.state_dict(), 'trained_agent.pth')
+torch.save(agent.state_dict(), '/zhome/59/9/198225/Adversarial_DRL/agents/trained_agent.pth')
