@@ -99,7 +99,7 @@ def train_ppo(agent, env, optimizer, experiment_name, epochs, gamma, save_folder
         # Compute returns and advantages
         with torch.no_grad():
             next_value = agent.value(batch_states[-1]).squeeze()
-        returns = compute_gae(next_value, batch_rewards, batch_dones, batch_values)
+        returns = compute_gae(next_value, batch_rewards, batch_dones, batch_values, gamma)
         returns = torch.tensor(returns, dtype=torch.float)
         advantages = returns - batch_values
 
