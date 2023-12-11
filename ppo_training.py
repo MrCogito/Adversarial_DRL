@@ -40,7 +40,7 @@ class PPOAgent(nn.Module):
         return self.policy(state), self.value(state)
     
     def act(self, state):
-        state = torch.from_numpy(state).float().view(1, -1)
+        state = torch.from_numpy(state).float().view(1, -1).to(device)
         probs, value = self.forward(state)
         m = Categorical(probs)
         action = m.sample()
@@ -58,7 +58,7 @@ def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
         returns.insert(0, gae + values[step])
     return returns
 
-def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, epochs, gamma, save_folder, batch_size):
+def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, epochs, gamma, save_folder, batch_size, device):
     # Initialize wandb (if you're using it)
     wandb.init(project="adversarial_dlr", name=name+ "test")
     
@@ -72,6 +72,7 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
     for epoch in range(epochs):
         print(f"Starting Epoch {epoch+1}/{epochs}")
         observations, _ = env.reset()
+        observations = {k: torch.from_numpy(v).float().to(device) for k, v in observations.items()}
         done = False
         total_reward = 0
         batch_data = {agent_name: [] for agent_name in env.agents}  # Data for each agent
@@ -84,7 +85,7 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
         while total_steps < batch_size:
             actions = {}
             for agent_name, state in observations.items():
-                flat_state = state.flatten()
+                flat_state = state.flatten().to(device)
                 current_agent = agent if agent_name == 'first_0' else opponent_agent
                 action, log_prob, value, entropy = current_agent.act(flat_state)
 
@@ -109,7 +110,7 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
         # Process batch data for each agent
         for agent_name, data in batch_data.items():
             print(f"Processing batch data for {agent_name}")
-            policy_loss, value_loss, loss, entropy = process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma)
+            policy_loss, value_loss, loss, entropy = process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma, device)
             total_policy_loss += policy_loss
             total_value_loss += value_loss
             total_loss += loss
@@ -136,22 +137,19 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
         torch.save(current_agent.state_dict(), final_model_save_path(agent_name))
 
 
-def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma):
+def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma,device):
     # Unpack data
     print(f"Processing batch data for {agent_name}")
     total_entropy = 0
 
     states, actions, log_probs, values, entropies, rewards, dones = zip(*data)
-
-    # Convert states to PyTorch tensors and possibly reshape
-    states = [torch.from_numpy(state).float().view(1, -1) for state in states]  # Reshape if necessary
-    states = torch.cat(states, dim=0)  # Concatenating to form a batch
-
-    actions = torch.tensor(actions, dtype=torch.long)  # Ensure actions are long type for indexing
-    log_probs = torch.stack(log_probs)
-    values = torch.stack(values)
-    rewards = torch.tensor(rewards, dtype=torch.float)
-    dones = torch.tensor(dones, dtype=torch.float)
+    states = [torch.from_numpy(state).float().view(1, -1).to(device) for state in states]
+    states = torch.cat(states, dim=0)
+    actions = torch.tensor(actions, dtype=torch.long).to(device)
+    log_probs = torch.stack(log_probs).to(device)
+    values = torch.stack(values).to(device)
+    rewards = torch.tensor(rewards, dtype=torch.float).to(device)
+    dones = torch.tensor(dones, dtype=torch.float).to(device)
 
     with torch.no_grad():
         next_value = agent.value(states[-1]).squeeze() if agent_name == 'first_0' else opponent_agent.value(states[-1]).squeeze()
