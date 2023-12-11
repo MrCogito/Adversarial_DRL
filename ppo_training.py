@@ -39,8 +39,15 @@ class PPOAgent(nn.Module):
     def forward(self, state):
         return self.policy(state), self.value(state)
     
-    def act(self, state):
-        state = torch.from_numpy(state).float().view(1, -1).to(device)
+    def act(self, state, device):
+        if isinstance(state, np.ndarray):
+            state = torch.from_numpy(state).float()
+        elif isinstance(state, torch.Tensor):
+            state = state.float()
+        else:
+            raise TypeError("Expected state to be np.ndarray or torch.Tensor")
+
+        state = state.view(1, -1).to(device)
         probs, value = self.forward(state)
         m = Categorical(probs)
         action = m.sample()
@@ -85,21 +92,29 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
         while total_steps < batch_size:
             actions = {}
             for agent_name, state in observations.items():
-                flat_state = state.flatten().to(device)
+                if isinstance(state, np.ndarray):
+                    flat_state = torch.from_numpy(state.flatten()).float()
+                elif isinstance(state, torch.Tensor):
+                    flat_state = state.flatten().float()
+                else:
+                    raise TypeError("State must be a np.ndarray or torch.Tensor")
+
+                # Move the tensor to the specified device
+                flat_state = flat_state.to(device)
                 current_agent = agent if agent_name == 'first_0' else opponent_agent
-                action, log_prob, value, entropy = current_agent.act(flat_state)
+                action, log_prob, value, entropy = current_agent.act(flat_state,device)
 
                 actions[agent_name] = action
 
                 batch_data[agent_name].append((flat_state, action, log_prob, value, entropy))
             step_results = env.step(actions)
             next_observations, rewards, dones = step_results[:3]
-            print(rewards.values())
+            #print(rewards.values())
             total_reward += sum(rewards.values())
 
             for agent_name in env.agents:
                 batch_data[agent_name][-1] += (rewards[agent_name], dones[agent_name])
-            print(f"Epoch {epoch+1}, Step {total_steps+1}: Step completed")
+            #print(f"Epoch {epoch+1}, Step {total_steps+1}: Step completed")
             total_steps += 1
             observations = next_observations
 
@@ -109,13 +124,13 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
 
         # Process batch data for each agent
         for agent_name, data in batch_data.items():
-            print(f"Processing batch data for {agent_name}")
+           # print(f"Processing batch data for {agent_name}")
             policy_loss, value_loss, loss, entropy = process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma, device)
             total_policy_loss += policy_loss
             total_value_loss += value_loss
             total_loss += loss
             total_entropy += entropy
-            print(f"Completed processing batch data for {agent_name}")
+           # print(f"Completed processing batch data for {agent_name}")
         # Logging and saving
         if epoch % 10 == 0:  # Adjust the frequency as needed
             for agent_name in ['agent', 'opponent_agent']:
@@ -130,7 +145,7 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
             'total_reward': total_reward,
             'average_reward': total_reward / total_steps
         })
-        print(f"Finished Epoch {epoch+1}/{epochs}")
+       # print(f"Finished Epoch {epoch+1}/{epochs}")
     # Final save after training completion
     for agent_name in ['agent', 'opponent_agent']:
         current_agent = agent if agent_name == 'agent' else opponent_agent
@@ -139,11 +154,13 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
 
 def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma,device):
     # Unpack data
-    print(f"Processing batch data for {agent_name}")
+    #print(f"Processing batch data for {agent_name}")
     total_entropy = 0
 
     states, actions, log_probs, values, entropies, rewards, dones = zip(*data)
-    states = [torch.from_numpy(state).float().view(1, -1).to(device) for state in states]
+
+    # Check if states are NumPy arrays and convert them to tensors if they are
+    states = [torch.from_numpy(state).float().view(1, -1).to(device) if isinstance(state, np.ndarray) else state.view(1, -1).to(device) for state in states]
     states = torch.cat(states, dim=0)
     actions = torch.tensor(actions, dtype=torch.long).to(device)
     log_probs = torch.stack(log_probs).to(device)
@@ -154,7 +171,7 @@ def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, oppon
     with torch.no_grad():
         next_value = agent.value(states[-1]).squeeze() if agent_name == 'first_0' else opponent_agent.value(states[-1]).squeeze()
     returns = compute_gae(next_value, rewards, dones, values, gamma)
-    returns = torch.tensor(returns, dtype=torch.float)
+    returns = torch.tensor(returns, dtype=torch.float).to(device)
     advantages = returns - values
 
     advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
@@ -194,5 +211,5 @@ def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, oppon
     current_optimizer.zero_grad()
     loss.backward()
     current_optimizer.step()
-    print(f"Completed processing batch data for {agent_name}")
+    #print(f"Completed processing batch data for {agent_name}")
     return policy_loss.item(), value_loss.item(), loss.item(), average_entropy
