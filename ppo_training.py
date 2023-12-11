@@ -5,7 +5,7 @@ import torch.optim as optim
 from torch.distributions import Categorical
 import numpy as np
 import torch.nn.init as init
-#import wandb
+import wandb
 
 class PPOAgent(nn.Module):
     def __init__(self, input_dim, output_dim):
@@ -60,7 +60,7 @@ def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
 
 def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, epochs, gamma, save_folder, batch_size):
     # Initialize wandb (if you're using it)
-    # wandb.init(project="adversarial_dlr", name=name)
+    wandb.init(project="adversarial_dlr", name=name)
     
     # Paths for saving metrics and model
     model_save_path = lambda epoch, agent_name: os.path.join(save_folder, f'{agent_name}_trained_agent_epoch_{epoch}.pth')
@@ -105,6 +105,7 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
         for agent_name, data in batch_data.items():
             print(f"Processing batch data for {agent_name}")
             process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma)
+            
             print(f"Completed processing batch data for {agent_name}")
         # Logging and saving
         if epoch % 10 == 0:  # Adjust the frequency as needed
@@ -112,11 +113,11 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
                 current_agent = agent if agent_name == 'agent' else opponent_agent
                 torch.save(current_agent.state_dict(), model_save_path(epoch, agent_name))
             # Log metrics to wandb or any other logging tool you're using
-            # wandb.log({
-            #     'epoch': epoch,
-            #     'total_reward': total_reward,
-            #     'average_reward': total_reward / total_steps,
-            # }, step=epoch)
+            wandb.log({
+                 'epoch': epoch,
+                 'total_reward': total_reward,
+                 'average_reward': total_reward / total_steps,
+            }, step=epoch)
         print(f"Finished Epoch {epoch+1}/{epochs}")
     # Final save after training completion
     for agent_name in ['agent', 'opponent_agent']:
