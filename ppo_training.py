@@ -4,7 +4,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.distributions import Categorical
 import numpy as np
-import wandb
+#import wandb
 
 class PPOAgent(nn.Module):
     def __init__(self, input_dim, output_dim):
@@ -48,9 +48,10 @@ def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
         returns.insert(0, gae + values[step])
     return returns
 
-def train_ppo(agent, env, optimizer, experiment_name, epochs, gamma, save_folder, batch_size):
+def train_ppo(agent, env, optimizer, name, epochs, gamma, save_folder, batch_size):
     # Initialize wandb
-    wandb.init(project="adversarial_dlr", name=experiment_name)
+    #
+    # wandb.init(project="adversarial_dlr", name=name)
 
     # Paths for saving metrics and model
     model_save_path = lambda epoch: os.path.join(save_folder, f'trained_agent_epoch_{epoch}.pth')
@@ -66,13 +67,19 @@ def train_ppo(agent, env, optimizer, experiment_name, epochs, gamma, save_folder
         batch_states, batch_actions, batch_log_probs, batch_rewards, batch_values, batch_dones = [], [], [], [], [], []
         batch_entropy = 0
         total_steps = 0
-
+        print("epoch init")
         while total_steps < batch_size:
-            state = observations.flatten()
-            action, log_prob, value, entropy = agent.act(state)
+            actions = {}
+            for agent_name, state in observations.items():
+                flat_state = state.flatten()
+                action, log_prob, value, entropy = agent.act(flat_state)
 
-            next_state, reward, done, _ = env.step(action)
-            total_reward += reward
+                actions[agent_name] = action
+                # Store other data like log_probs, values, etc. here
+
+            step_outputs = env.step(actions)
+            next_observations, reward, dones, infos = step_outputs[:4]
+            total_reward += sum(reward.values())  # Sum of rewards from all agents
 
             batch_states.append(state)
             batch_actions.append(action)
@@ -83,7 +90,7 @@ def train_ppo(agent, env, optimizer, experiment_name, epochs, gamma, save_folder
             batch_entropy += entropy
 
             total_steps += 1
-            observations = next_state
+            observations = next_observations
 
             if done:
                 observations, _ = env.reset()
@@ -137,16 +144,16 @@ def train_ppo(agent, env, optimizer, experiment_name, epochs, gamma, save_folder
        
 
         # Log metrics to wandb
-        wandb.log({
-            'total_reward': total_reward,
-            'average_reward': average_reward,
-            'policy_loss': policy_loss_val,
-            'value_loss': value_loss_val,
-            'entropy': entropy_val,
-            'average_advantage': average_advantage,
-            'episode_length': episode_length,
+        # wandb.log({
+        #     'total_reward': total_reward,
+        #     'average_reward': average_reward,
+        #     'policy_loss': policy_loss_val,
+        #     'value_loss': value_loss_val,
+        #     'entropy': entropy_val,
+        #     'average_advantage': average_advantage,
+        #     'episode_length': episode_length,
             
-        }, step=epoch) 
+        # }, step=epoch) 
 
     # Final save after training completion
     torch.save(agent.state_dict(), final_model_save_path)

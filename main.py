@@ -14,12 +14,13 @@ class Defaults(Parameters):
     epochs: int = 1000
     batch_size: int = 32  
     isServer: bool = True
+    gamma: float = 99
 
-    def run(self, name: str, epochs: int, batch_size: int):
+    def run(self, name: str, epochs: int, batch_size: int, gamma: float):
         
-        self.train_agent(name=name, epochs=epochs, batch_size=batch_size)
+        self.train_agent(name=name, epochs=epochs, batch_size=batch_size, gamma=gamma)
 
-    def train_agent(self, name, epochs, batch_size):
+    def train_agent(self, name, epochs, batch_size, gamma):
         print("Starting training with PPO Agent")
         env = pong_v3.parallel_env()
         output_dim = env.action_space('first_0').n
@@ -29,7 +30,7 @@ class Defaults(Parameters):
         optimizer = optim.Adam(agent.parameters(), lr=3e-4)
 
         save_folder = '/zhome/59/9/198225/Adversarial_DRL/agents/'
-        train_ppo(agent, env, optimizer, name, epochs, 0.99, save_folder)
+        train_ppo(agent, env, optimizer, name=name, epochs=epochs, gamma=gamma, save_folder=save_folder, batch_size=batch_size)
 
 # Start the program
 Defaults.start()
