@@ -17,7 +17,7 @@ class Defaults:  # Removed the inheritance from Parameters if it's HPC-specific
         self.gamma = 99
 
     def run(self):
-        self.train_agent(self.name, self.epochs, self.batch_size, self.gamma)
+        self.train_agent(self, self.name, self.epochs, self.batch_size, self.gamma)
 
     def train_agent(self, name, epochs, batch_size, gamma):
         print("Starting training with PPO Agent")

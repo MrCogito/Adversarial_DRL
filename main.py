@@ -22,7 +22,7 @@ class Defaults(Parameters):
 
         self.train_agent(name=name, epochs=epochs, batch_size=batch_size, gamma=gamma)
 
-    def train_agent(self, name, epochs, batch_size, gamma, device):
+    def train_agent(self, name, epochs, batch_size, gamma):
         print("Starting training with PPO Agent")
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         env = pong_v3.parallel_env()
