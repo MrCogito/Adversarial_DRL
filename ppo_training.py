@@ -60,7 +60,7 @@ def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
 
 def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, epochs, gamma, save_folder, batch_size):
     # Initialize wandb (if you're using it)
-    wandb.init(project="adversarial_dlr", name=name)
+    wandb.init(project="adversarial_dlr", name=name+ "test")
     
     # Paths for saving metrics and model
     model_save_path = lambda epoch, agent_name: os.path.join(save_folder, f'{agent_name}_trained_agent_epoch_{epoch}.pth')
@@ -76,6 +76,10 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
         total_reward = 0
         batch_data = {agent_name: [] for agent_name in env.agents}  # Data for each agent
         total_steps = 0
+        total_policy_loss = 0
+        total_value_loss = 0
+        total_loss = 0
+        total_entropy = 0
 
         while total_steps < batch_size:
             actions = {}
@@ -89,6 +93,7 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
                 batch_data[agent_name].append((flat_state, action, log_prob, value, entropy))
             step_results = env.step(actions)
             next_observations, rewards, dones = step_results[:3]
+            print(rewards.values())
             total_reward += sum(rewards.values())
 
             for agent_name in env.agents:
@@ -104,20 +109,26 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
         # Process batch data for each agent
         for agent_name, data in batch_data.items():
             print(f"Processing batch data for {agent_name}")
-            process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma)
-            
+            policy_loss, value_loss, loss, entropy = process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma)
+            total_policy_loss += policy_loss
+            total_value_loss += value_loss
+            total_loss += loss
+            total_entropy += entropy
             print(f"Completed processing batch data for {agent_name}")
         # Logging and saving
         if epoch % 10 == 0:  # Adjust the frequency as needed
             for agent_name in ['agent', 'opponent_agent']:
                 current_agent = agent if agent_name == 'agent' else opponent_agent
                 torch.save(current_agent.state_dict(), model_save_path(epoch, agent_name))
-            # Log metrics to wandb or any other logging tool you're using
             wandb.log({
-                 'epoch': epoch,
-                 'total_reward': total_reward,
-                 'average_reward': total_reward / total_steps,
-            }, step=epoch)
+            'epoch': epoch,
+            'average_policy_loss': total_policy_loss / total_steps,
+            'average_value_loss': total_value_loss / total_steps,
+            'average_total_loss': total_loss / total_steps,
+            'average_entropy': total_entropy / total_steps,
+            'total_reward': total_reward,
+            'average_reward': total_reward / total_steps
+        })
         print(f"Finished Epoch {epoch+1}/{epochs}")
     # Final save after training completion
     for agent_name in ['agent', 'opponent_agent']:
@@ -128,6 +139,8 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
 def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma):
     # Unpack data
     print(f"Processing batch data for {agent_name}")
+    total_entropy = 0
+
     states, actions, log_probs, values, entropies, rewards, dones = zip(*data)
 
     # Convert states to PyTorch tensors and possibly reshape
@@ -147,6 +160,17 @@ def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, oppon
     advantages = returns - values
 
     advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
+    # Initialize entropy accumulation
+    total_entropy = 0
+
+    # Loop through each step in the batch to calculate entropy
+    for entropy in entropies:
+        total_entropy += entropy
+
+    # Average entropy over all steps
+    average_entropy = total_entropy / len(entropies)
+
 
     current_agent = agent if agent_name == 'first_0' else opponent_agent
     current_optimizer = optimizer if agent_name == 'first_0' else opponent_optimizer
@@ -173,3 +197,4 @@ def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, oppon
     loss.backward()
     current_optimizer.step()
     print(f"Completed processing batch data for {agent_name}")
+    return policy_loss.item(), value_loss.item(), loss.item(), average_entropy
