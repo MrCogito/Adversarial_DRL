@@ -20,7 +20,7 @@ class Defaults(Parameters):
 
     def run(self, name: str, epochs: int, batch_size: int, gamma: float):
 
-        self.train_agent(name=name, epochs=epochs, batch_size=batch_size, gamma=gamma)
+        self.train_agent(self=self,name=name, epochs=epochs, batch_size=batch_size, gamma=gamma)
 
     def train_agent(self, name, epochs, batch_size, gamma):
         print("Starting training with PPO Agent")
