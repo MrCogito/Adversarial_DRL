@@ -28,8 +28,9 @@ class Defaults:  # Removed the inheritance from Parameters if it's HPC-specific
         agent = PPOAgent(input_dim, output_dim)
         opponent_agent = PPOAgent(input_dim, output_dim)  # Create opponent agent
         optimizer = optim.Adam(agent.parameters(), lr=3e-4)
-        save_folder = '/path/to/save_folder'
-        train_ppo(agent, opponent_agent, env, optimizer, name, epochs, gamma, save_folder, batch_size)
+        save_folder = '/zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL/models'
+        
+        train_ppo(agent=agent, opponent_agent=opponent_agent, env=env, optimizer=optimizer, opponent_optimizer=optimizer, name=name, epochs=epochs, gamma=gamma, save_folder=save_folder, batch_size=batch_size)
 
 # Start the program
 defaults = Defaults()
