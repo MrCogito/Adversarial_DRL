@@ -1,5 +1,6 @@
-from main import Defaults
+import sys
+import os
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+from main import Defaults, GPU
 
-Defaults("Example1", b=4, d="dsf")
-Defaults("Example2", b=4, d="dssf", GPU=True)
-Defaults("Example3", a=2, instances=2)
+Defaults(name="Test1", GPU=GPU.a80)

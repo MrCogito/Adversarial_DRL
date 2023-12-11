@@ -1,16 +1,17 @@
-from dtu import Parameters, dtu, GPU
 from pettingzoo.atari import pong_v3
 from ppo_training import PPOAgent, train_ppo  # Import from ppo_combined.py
 import torch.optim as optim
 import numpy as np
 import torch
+from dtu import Parameters, dtu, GPU
 
 @dtu
 class Defaults(Parameters):
-    name: str = "experiment-name"
+    name: str = "testname"
     instances: int = 1
-    GPU: None | GPU = GPU.v32
+    #GPU: None | GPU = GPU.v32
     time: int = 84600 # 23.5 hours
+    GPU:  GPU = GPU.v32
     #data_folder_name: str = "data_fod"
     epochs: int = 1000
     batch_size: int = 32  
@@ -18,7 +19,6 @@ class Defaults(Parameters):
     gamma: float = 99
 
     def run(self, name: str, epochs: int, batch_size: int, gamma: float):
-        device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
         self.train_agent(name=name, epochs=epochs, batch_size=batch_size, gamma=gamma)
 

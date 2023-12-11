@@ -60,7 +60,7 @@ def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
 
 def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, epochs, gamma, save_folder, batch_size, device):
     # Initialize wandb (if you're using it)
-    wandb.init(project="adversarial_dlr", name=name+ "test")
+    wandb.init(project="adversarial_dlr", name=name)
     
     # Paths for saving metrics and model
     model_save_path = lambda epoch, agent_name: os.path.join(save_folder, f'{agent_name}_trained_agent_epoch_{epoch}.pth')
