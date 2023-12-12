@@ -10,21 +10,22 @@ import wandb
 class PPOAgent(nn.Module):
     def __init__(self, input_dim, output_dim):
         super(PPOAgent, self).__init__()
+        # Moderately increasing the number of neurons in each layer
         self.policy = nn.Sequential(
-            nn.Linear(input_dim, 128),
+            nn.Linear(input_dim, 192),  # Increased from 128 to 192
             nn.ReLU(),
-            nn.Linear(128, 256),
+            nn.Linear(192, 384),       # Increased from 256 to 384
             nn.ReLU(),
-            nn.Linear(256, output_dim),
+            nn.Linear(384, output_dim),
             nn.Softmax(dim=-1)
         )
         
         self.value = nn.Sequential(
-            nn.Linear(input_dim, 128),
+            nn.Linear(input_dim, 192),  # Increased from 128 to 192
             nn.ReLU(),
-            nn.Linear(128, 256),
+            nn.Linear(192, 384),       # Increased from 256 to 384
             nn.ReLU(),
-            nn.Linear(256, 1)
+            nn.Linear(384, 1)
         )
 
         self._init_weights()
@@ -68,8 +69,8 @@ def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
 def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, epochs, gamma, entropy_coeff, save_folder, batch_size, device):
     wandb.init(project="adversarial_dlr", name=name)
     
-    model_save_path = lambda epoch, agent_name: os.path.join(save_folder, f'{agent_name}_trained_agent_epoch_{epoch}.pth')
-    final_model_save_path = lambda agent_name: os.path.join(save_folder, f'{agent_name}_trained_agent.pth')
+    model_save_path = lambda epoch, agent_name: os.path.join(save_folder, f'{name}_{agent_name}_trained_agent_epoch_{epoch}.pth')
+    final_model_save_path = lambda agent_name: os.path.join(save_folder, f'{name}_{agent_name}_trained_agent.pth')
 
     os.makedirs(save_folder, exist_ok=True)
 

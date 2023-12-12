@@ -17,11 +17,11 @@ class Defaults(Parameters):
     batch_size: int = 32  
     isServer: bool = True
     gamma: float = 99
-    entropy_coeff: 0.02
 
-    def run(self, name: str, epochs: int, batch_size: int, gamma: float, entropy_coeff: float):
 
-        self.train_agent(self=self,name=name, epochs=epochs, batch_size=batch_size, gamma=gamma,entropy_coeff=entropy_coeff)
+    def run(self, name: str, epochs: int, batch_size: int, gamma: float):
+        entropy_coef=0.02
+        self.train_agent(self=self,name=name, epochs=epochs, batch_size=batch_size, gamma=gamma,entropy_coeff=entropy_coef)
 
     def train_agent(self, name, epochs, batch_size, gamma,entropy_coeff):
         print("Starting training with PPO Agent")
