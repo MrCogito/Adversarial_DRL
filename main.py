@@ -17,12 +17,13 @@ class Defaults(Parameters):
     batch_size: int = 32  
     isServer: bool = True
     gamma: float = 99
+    entropy_coeff: 0.02
 
-    def run(self, name: str, epochs: int, batch_size: int, gamma: float):
+    def run(self, name: str, epochs: int, batch_size: int, gamma: float, entropy_coeff: float):
 
-        self.train_agent(self=self,name=name, epochs=epochs, batch_size=batch_size, gamma=gamma)
+        self.train_agent(self=self,name=name, epochs=epochs, batch_size=batch_size, gamma=gamma,entropy_coeff=entropy_coeff)
 
-    def train_agent(self, name, epochs, batch_size, gamma):
+    def train_agent(self, name, epochs, batch_size, gamma,entropy_coeff):
         print("Starting training with PPO Agent")
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         env = pong_v3.parallel_env()
@@ -34,8 +35,8 @@ class Defaults(Parameters):
         optimizer = optim.Adam(agent.parameters(), lr=3e-4)
         opponent_optimizer = optim.Adam(opponent_agent.parameters(), lr=3e-4)  # Separate optimizer for opponent
 
-        save_folder = '/zhome/59/9/198225/Adversarial_DRL/agents/'
-        train_ppo(agent=agent, opponent_agent=opponent_agent, env=env, optimizer=optimizer, opponent_optimizer=opponent_optimizer, name=name, epochs=epochs, gamma=gamma, save_folder=save_folder, batch_size=batch_size, device=device)
+        save_folder = '/zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL/agents/'
+        train_ppo(agent=agent, opponent_agent=opponent_agent, env=env, optimizer=optimizer, opponent_optimizer=opponent_optimizer, name=name, epochs=epochs, entropy_coeff=entropy_coeff, gamma=gamma, save_folder=save_folder, batch_size=batch_size, device=device)
 
 # Start the program
 Defaults.start()

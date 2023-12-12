@@ -65,24 +65,24 @@ def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
         returns.insert(0, gae + values[step])
     return returns
 
-def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, epochs, gamma, save_folder, batch_size, device):
-    # Initialize wandb (if you're using it)
+def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, epochs, gamma, entropy_coeff, save_folder, batch_size, device):
     wandb.init(project="adversarial_dlr", name=name)
     
-    # Paths for saving metrics and model
     model_save_path = lambda epoch, agent_name: os.path.join(save_folder, f'{agent_name}_trained_agent_epoch_{epoch}.pth')
     final_model_save_path = lambda agent_name: os.path.join(save_folder, f'{agent_name}_trained_agent.pth')
 
     os.makedirs(save_folder, exist_ok=True)
 
-    # Training loop
+    best_reward = -float('inf')
+    best_state_dict = agent.state_dict()
+
     for epoch in range(epochs):
         print(f"Starting Epoch {epoch+1}/{epochs}")
         observations, _ = env.reset()
         observations = {k: torch.from_numpy(v).float().to(device) for k, v in observations.items()}
         done = False
         total_reward = 0
-        batch_data = {agent_name: [] for agent_name in env.agents}  # Data for each agent
+        batch_data = {agent_name: [] for agent_name in env.agents}
         total_steps = 0
         total_policy_loss = 0
         total_value_loss = 0
@@ -92,74 +92,63 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
         while total_steps < batch_size:
             actions = {}
             for agent_name, state in observations.items():
-                if isinstance(state, np.ndarray):
-                    flat_state = torch.from_numpy(state.flatten()).float()
-                elif isinstance(state, torch.Tensor):
-                    flat_state = state.flatten().float()
-                else:
-                    raise TypeError("State must be a np.ndarray or torch.Tensor")
-
-                # Move the tensor to the specified device
+                flat_state = torch.from_numpy(state.flatten()).float() if isinstance(state, np.ndarray) else state.flatten().float()
                 flat_state = flat_state.to(device)
                 current_agent = agent if agent_name == 'first_0' else opponent_agent
-                action, log_prob, value, entropy = current_agent.act(flat_state,device)
+                action, log_prob, value, entropy = current_agent.act(flat_state, device)
 
                 actions[agent_name] = action
-
                 batch_data[agent_name].append((flat_state, action, log_prob, value, entropy))
+
             step_results = env.step(actions)
             next_observations, rewards, dones = step_results[:3]
-            #print(rewards.values())
             total_reward += sum(rewards.values())
 
             for agent_name in env.agents:
                 batch_data[agent_name][-1] += (rewards[agent_name], dones[agent_name])
-            #print(f"Epoch {epoch+1}, Step {total_steps+1}: Step completed")
+
             total_steps += 1
             observations = next_observations
 
             if done:
                 observations, _ = env.reset()
-            #print(f"Data collection step: {total_steps+1}")
 
-        # Process batch data for each agent
         for agent_name, data in batch_data.items():
-           # print(f"Processing batch data for {agent_name}")
-            policy_loss, value_loss, loss, entropy = process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma, device)
+            policy_loss, value_loss, loss, entropy = process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma, entropy_coeff, device)
             total_policy_loss += policy_loss
             total_value_loss += value_loss
             total_loss += loss
             total_entropy += entropy
-           # print(f"Completed processing batch data for {agent_name}")
-        # Logging and saving
-        if epoch % 10 == 0:  # Adjust the frequency as needed
+
+        if total_reward > best_reward:
+            best_reward = total_reward
+            best_state_dict = agent.state_dict()
+
+        if epoch % 100 == 0 and epoch != 0:
+            agent.load_state_dict(best_state_dict)
+
+        if epoch % 400 == 0:
             for agent_name in ['agent', 'opponent_agent']:
                 current_agent = agent if agent_name == 'agent' else opponent_agent
                 torch.save(current_agent.state_dict(), model_save_path(epoch, agent_name))
+        if epoch % 10 == 0:
             wandb.log({
-            'epoch': epoch,
-            'average_policy_loss': total_policy_loss / total_steps,
-            'average_value_loss': total_value_loss / total_steps,
-            'average_total_loss': total_loss / total_steps,
-            'average_entropy': total_entropy / total_steps,
-            'total_reward': total_reward,
-            'average_reward': total_reward / total_steps
-        })
-       # print(f"Finished Epoch {epoch+1}/{epochs}")
-    # Final save after training completion
+                'epoch': epoch,
+                'average_policy_loss': total_policy_loss / total_steps,
+                'average_value_loss': total_value_loss / total_steps,
+                'average_total_loss': total_loss / total_steps,
+                'average_entropy': total_entropy / total_steps,
+                'total_reward': total_reward,
+                'average_reward': total_reward / total_steps
+            })
+
     for agent_name in ['agent', 'opponent_agent']:
         current_agent = agent if agent_name == 'agent' else opponent_agent
         torch.save(current_agent.state_dict(), final_model_save_path(agent_name))
 
-
-def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma,device):
-    # Unpack data
-    #print(f"Processing batch data for {agent_name}")
-    total_entropy = 0
-
+def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma, entropy_coeff, device):
     states, actions, log_probs, values, entropies, rewards, dones = zip(*data)
 
-    # Check if states are NumPy arrays and convert them to tensors if they are
     states = [torch.from_numpy(state).float().view(1, -1).to(device) if isinstance(state, np.ndarray) else state.view(1, -1).to(device) for state in states]
     states = torch.cat(states, dim=0)
     actions = torch.tensor(actions, dtype=torch.long).to(device)
@@ -176,40 +165,29 @@ def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, oppon
 
     advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
 
-    # Initialize entropy accumulation
     total_entropy = 0
-
-    # Loop through each step in the batch to calculate entropy
     for entropy in entropies:
         total_entropy += entropy
-
-    # Average entropy over all steps
-    average_entropy = total_entropy / len(entropies)
-
 
     current_agent = agent if agent_name == 'first_0' else opponent_agent
     current_optimizer = optimizer if agent_name == 'first_0' else opponent_optimizer
 
-    # Compute policy loss and value loss
     current_agent_policy, _ = current_agent(states)
     old_probs = torch.exp(log_probs)
     new_probs = current_agent_policy.gather(1, actions.unsqueeze(1)).squeeze(1)
     ratio = new_probs / old_probs
 
-    # Clipped policy objective
     surr1 = ratio * advantages
     surr2 = torch.clamp(ratio, 1.0 - 0.2, 1.0 + 0.2) * advantages
     policy_loss = -torch.min(surr1, surr2).mean()
 
-    # Value loss
     _, current_agent_value = current_agent(states)
     value_loss = 0.5 * (returns - current_agent_value.squeeze()).pow(2).mean()
 
-    # Total loss
-    loss = policy_loss + value_loss - 0.01 * torch.stack(entropies).mean()
+    loss = policy_loss + value_loss - entropy_coeff * torch.stack(entropies).mean()
 
     current_optimizer.zero_grad()
     loss.backward()
     current_optimizer.step()
-    #print(f"Completed processing batch data for {agent_name}")
-    return policy_loss.item(), value_loss.item(), loss.item(), average_entropy
+
+    return policy_loss.item(), value_loss.item(), loss.item(), total_entropy / len(entropies)
