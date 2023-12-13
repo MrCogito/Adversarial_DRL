@@ -1,4 +1,6 @@
 venv/*pyc
 .vscode/*
 __pycache__
+venv/
+outputs/
 agents/
