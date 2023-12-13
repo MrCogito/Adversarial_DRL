@@ -74,23 +74,20 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
 
     os.makedirs(save_folder, exist_ok=True)
 
-    best_reward = -float('inf')
+    
     best_state_dict = agent.state_dict()
+   
+
 
     for epoch in range(epochs):
-        print(f"Starting Epoch {epoch+1}/{epochs}")
         observations, _ = env.reset()
         observations = {k: torch.from_numpy(v).float().to(device) for k, v in observations.items()}
         done = False
         total_reward = 0
         batch_data = {agent_name: [] for agent_name in env.agents}
-        total_steps = 0
-        total_policy_loss = 0
-        total_value_loss = 0
-        total_loss = 0
-        total_entropy = 0
+        episode_length = 0
 
-        while total_steps < batch_size:
+        while not done:
             actions = {}
             for agent_name, state in observations.items():
                 flat_state = torch.from_numpy(state.flatten()).float() if isinstance(state, np.ndarray) else state.flatten().float()
@@ -102,17 +99,20 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
                 batch_data[agent_name].append((flat_state, action, log_prob, value, entropy))
 
             step_results = env.step(actions)
-            next_observations, rewards, dones = step_results[:3]
+            next_observations, rewards, dones, _, _ = step_results
             total_reward += sum(rewards.values())
 
             for agent_name in env.agents:
                 batch_data[agent_name][-1] += (rewards[agent_name], dones[agent_name])
 
-            total_steps += 1
+            episode_length += 1
+            done = any(dones.values())
             observations = next_observations
 
-            if done:
-                observations, _ = env.reset()
+        total_policy_loss = 0
+        total_value_loss = 0
+        total_loss = 0
+        total_entropy = 0
 
         for agent_name, data in batch_data.items():
             policy_loss, value_loss, loss, entropy = process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma, entropy_coeff, device)
@@ -121,9 +121,15 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
             total_loss += loss
             total_entropy += entropy
 
-        if total_reward > best_reward:
-            best_reward = total_reward
-            best_state_dict = agent.state_dict()
+        # Log the episode length and other metrics
+        wandb.log({
+            'epoch': epoch,
+            'episode_length': episode_length,
+            'average_policy_loss': total_policy_loss / episode_length,
+            'average_value_loss': total_value_loss / episode_length,
+            'average_total_loss': total_loss / episode_length,
+            'average_entropy': total_entropy / episode_length,
+        })
 
         if epoch % 100 == 0 and epoch != 0:
             agent.load_state_dict(best_state_dict)
@@ -132,20 +138,21 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
             for agent_name in ['agent', 'opponent_agent']:
                 current_agent = agent if agent_name == 'agent' else opponent_agent
                 torch.save(current_agent.state_dict(), model_save_path(epoch, agent_name))
-        if epoch % 10 == 0:
+        if epoch % 1 == 0:
             wandb.log({
-                'epoch': epoch,
-                'average_policy_loss': total_policy_loss / total_steps,
-                'average_value_loss': total_value_loss / total_steps,
-                'average_total_loss': total_loss / total_steps,
-                'average_entropy': total_entropy / total_steps,
-                'total_reward': total_reward,
-                'average_reward': total_reward / total_steps
-            })
+            'epoch': epoch,
+            'episode_length': episode_length,
+            'average_policy_loss': total_policy_loss / episode_length,
+            'average_value_loss': total_value_loss / episode_length,
+            'average_total_loss': total_loss / episode_length,
+            'average_entropy': total_entropy / episode_length,
+        })
+    
+    # Save the best model at the end of training
+    torch.save(best_state_dict, final_model_save_path('best_agent'))
 
-    for agent_name in ['agent', 'opponent_agent']:
-        current_agent = agent if agent_name == 'agent' else opponent_agent
-        torch.save(current_agent.state_dict(), final_model_save_path(agent_name))
+    # Save the best model at the end of training
+    torch.save(best_state_dict, final_model_save_path('best_agent'))
 
 def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, opponent_optimizer, gamma, entropy_coeff, device):
     states, actions, log_probs, values, entropies, rewards, dones = zip(*data)
