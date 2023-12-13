@@ -1,0 +1,1 @@
+{"epoch": 990, "average_policy_loss": 6.123445928096771e-08, "average_value_loss": 24.443941877922043, "average_total_loss": 24.443941878154874, "average_entropy": 7.450581485102248e-09, "total_reward": 0, "average_reward": 0.0, "_timestamp": 1702409180.7355015, "_runtime": 207.12486147880554, "_step": 99, "_wandb": {"runtime": 211}}

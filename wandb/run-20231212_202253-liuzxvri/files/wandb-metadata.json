@@ -1,0 +1,183 @@
+{
+    "os": "Linux-5.4.258-1.el7.elrepo.x86_64-x86_64-with-glibc2.17",
+    "python": "3.9.11",
+    "heartbeatAt": "2023-12-12T19:22:54.253442",
+    "startedAt": "2023-12-12T19:22:53.574237",
+    "docker": null,
+    "cuda": null,
+    "args": [
+        "-name",
+        "Test16-0",
+        "-time",
+        "84600",
+        "-epochs",
+        "1000",
+        "-batch_size",
+        "32",
+        "-isServer",
+        "True",
+        "-gamma",
+        "99.0",
+        "-ID",
+        "0"
+    ],
+    "state": "running",
+    "program": "/zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL/main.py",
+    "codePathLocal": "main.py",
+    "codePath": "main.py",
+    "git": {
+        "remote": "https://github.com/MrCogito/Adversarial_DRL.git",
+        "commit": "177969bb7247d4c2d91aa0cf601db9c759fdf4c0"
+    },
+    "email": "karoljedr@gmail.com",
+    "root": "/zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL",
+    "host": "n-62-20-4",
+    "username": "s230208",
+    "executable": "/zhome/59/9/198225/Desktop/Adversarial_DRL/project-env/bin/python",
+    "cpu_count": 24,
+    "cpu_count_logical": 24,
+    "cpu_freq": {
+        "current": 2505.782041666667,
+        "min": 0.0,
+        "max": 0.0
+    },
+    "cpu_freq_per_core": [
+        {
+            "current": 3199.042,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 1571.08,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2675.989,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2314.374,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2309.738,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2297.422,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 1713.539,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 1430.093,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 1398.706,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 1592.475,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 1628.648,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 1653.277,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3396.65,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3396.168,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3399.826,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3393.945,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2696.253,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2891.404,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2693.321,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 3391.489,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2715.107,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2715.841,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2947.381,
+            "min": 0.0,
+            "max": 0.0
+        },
+        {
+            "current": 2717.001,
+            "min": 0.0,
+            "max": 0.0
+        }
+    ],
+    "disk": {
+        "/": {
+            "total": 71.9168586730957,
+            "used": 5.082191467285156
+        }
+    },
+    "gpu": "Tesla V100-PCIE-16GB",
+    "gpu_count": 1,
+    "gpu_devices": [
+        {
+            "name": "Tesla V100-PCIE-16GB",
+            "memory_total": 17179869184
+        }
+    ],
+    "memory": {
+        "total": 188.55633544921875
+    }
+}
