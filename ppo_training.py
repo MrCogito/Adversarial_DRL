@@ -257,7 +257,8 @@ def train_ppo_random(agent, opponent_agent, env, optimizer, opponent_optimizer, 
 
         average_reward = scores['first_0'] / episode_length
 
-        policy_loss, value_loss, loss, entropy = process_batch_data(batch_data, agent, optimizer, gamma, entropy_coeff, device)
+        policy_loss, value_loss, loss, entropy = process_batch_data_random(batch_data, agent, optimizer, gamma, entropy_coeff, device)
+        
 
         wandb.log({
             'epoch': epoch,
@@ -277,3 +278,44 @@ def train_ppo_random(agent, opponent_agent, env, optimizer, opponent_optimizer, 
             torch.save(agent.state_dict(), model_save_path(epoch))
 
     torch.save(best_state_dict, final_model_save_path)
+
+
+    def process_batch_data_random(batch_data, agent, optimizer, gamma, entropy_coeff, device):
+        states, actions, old_log_probs, values, entropies, rewards, dones = zip(*batch_data)
+
+        states = torch.stack(states).to(device)
+        actions = torch.tensor(actions, dtype=torch.long).to(device)
+        old_log_probs = torch.stack(old_log_probs).to(device)
+        values = torch.stack(values).to(device)
+        rewards = torch.tensor(rewards, dtype=torch.float).to(device)
+        dones = torch.tensor(dones, dtype=torch.float).to(device)
+
+        with torch.no_grad():
+            next_value = agent.value(states[-1]).squeeze()
+        returns = compute_gae(next_value, rewards, dones, values, gamma)
+
+        returns = torch.tensor(returns, dtype=torch.float).to(device)
+        advantages = returns - values
+        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
+
+        total_entropy = sum(entropies)
+
+        agent_policy, agent_value = agent(states)
+        new_log_probs = agent_policy.gather(1, actions.unsqueeze(1)).squeeze(1)
+        old_probs = torch.exp(old_log_probs)
+        new_probs = torch.exp(new_log_probs)
+        ratio = new_probs / old_probs
+
+        surr1 = ratio * advantages
+        surr2 = torch.clamp(ratio, 1.0 - 0.2, 1.0 + 0.2) * advantages
+        policy_loss = -torch.min(surr1, surr2).mean()
+
+        value_loss = 0.5 * (returns - agent_value.squeeze()).pow(2).mean()
+
+        loss = policy_loss + value_loss - entropy_coeff * total_entropy.mean()
+
+        optimizer.zero_grad()
+        loss.backward()
+        optimizer.step()
+
+        return policy_loss.item(), value_loss.item(), loss.item(), total_entropy.mean().item()
