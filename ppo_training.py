@@ -83,11 +83,14 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
         observations, _ = env.reset()
         observations = {k: torch.from_numpy(v).float().to(device) for k, v in observations.items()}
         done = False
-        total_reward = 0
+        
+        scores = {agent_name: 0 for agent_name in env.agents}  # Track scores for each agent
         batch_data = {agent_name: [] for agent_name in env.agents}
         episode_length = 0
+        max_episode_length = 12000
+        best_score = 100
 
-        while not done:
+        while not done and episode_length < max_episode_length:
             actions = {}
             for agent_name, state in observations.items():
                 flat_state = torch.from_numpy(state.flatten()).float() if isinstance(state, np.ndarray) else state.flatten().float()
@@ -100,14 +103,20 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
 
             step_results = env.step(actions)
             next_observations, rewards, dones, _, _ = step_results
-            total_reward += sum(rewards.values())
+            
 
             for agent_name in env.agents:
+                scores[agent_name] += rewards[agent_name]
                 batch_data[agent_name][-1] += (rewards[agent_name], dones[agent_name])
 
             episode_length += 1
             done = any(dones.values())
             observations = next_observations
+        
+        current_score = sum(scores.values())
+        if current_score < best_score:
+            best_score = current_score
+            best_state_dict = agent.state_dict()
 
         total_policy_loss = 0
         total_value_loss = 0
@@ -134,23 +143,21 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
         if epoch % 100 == 0 and epoch != 0:
             agent.load_state_dict(best_state_dict)
 
-        if epoch % 400 == 0:
+        if epoch % 1000 == 0:
             for agent_name in ['agent', 'opponent_agent']:
                 current_agent = agent if agent_name == 'agent' else opponent_agent
                 torch.save(current_agent.state_dict(), model_save_path(epoch, agent_name))
-        if epoch % 1 == 0:
+        if True:
             wandb.log({
             'epoch': epoch,
             'episode_length': episode_length,
+            'scores': current_score,
             'average_policy_loss': total_policy_loss / episode_length,
             'average_value_loss': total_value_loss / episode_length,
             'average_total_loss': total_loss / episode_length,
             'average_entropy': total_entropy / episode_length,
         })
     
-    # Save the best model at the end of training
-    torch.save(best_state_dict, final_model_save_path('best_agent'))
-
     # Save the best model at the end of training
     torch.save(best_state_dict, final_model_save_path('best_agent'))
 
