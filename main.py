@@ -1,5 +1,5 @@
 from pettingzoo.atari import pong_v3
-from ppo_training import PPOAgent, train_ppo  # Import from ppo_combined.py
+from ppo_training import PPOAgent, train_ppo, train_ppo_random 
 import torch.optim as optim
 import numpy as np
 import torch
@@ -36,7 +36,7 @@ class Defaults(Parameters):
         opponent_optimizer = optim.Adam(opponent_agent.parameters(), lr=3e-4)  # Separate optimizer for opponent
 
         save_folder = '/zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL/agents/'
-        train_ppo(agent=agent, opponent_agent=opponent_agent, env=env, optimizer=optimizer, opponent_optimizer=opponent_optimizer, name=name, epochs=epochs, entropy_coeff=entropy_coeff, gamma=gamma, save_folder=save_folder, batch_size=batch_size, device=device)
+        train_ppo_random(agent=agent, opponent_agent=opponent_agent, env=env, optimizer=optimizer, opponent_optimizer=opponent_optimizer, name=name, epochs=epochs, entropy_coeff=entropy_coeff, gamma=gamma, save_folder=save_folder, batch_size=batch_size, device=device)
 
 # Start the program
 Defaults.start()
