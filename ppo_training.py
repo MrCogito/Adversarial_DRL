@@ -88,7 +88,7 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
         batch_data = {agent_name: [] for agent_name in env.agents}
         episode_length = 0
         max_episode_length = 12000
-        best_score = 100
+        best_score = 100 # Its just high number in the beggining 
 
         while not done and episode_length < max_episode_length:
             actions = {}
@@ -121,7 +121,7 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
             observations = next_observations
 
         
-        current_score = sum(scores.values())
+        current_score = abs(scores['first_0'])
         if current_score < best_score:
             best_score = current_score
             best_state_dict = agent.state_dict()
@@ -142,14 +142,15 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
         wandb.log({
             'epoch': epoch,
             'episode_length': episode_length,
-            'scores': scores,  # This logs the scores dictionary
+            'best_score': best_score,
+            'current_score': current_score,  # This logs the scores dictionary
             'average_policy_loss': total_policy_loss / episode_length,
             'average_value_loss': total_value_loss / episode_length,
             'average_total_loss': total_loss / episode_length,
             'average_entropy': total_entropy / episode_length,
         })
 
-        if epoch % 100 == 0 and epoch != 0:
+        if epoch % 15 == 0 and epoch != 0:
             agent.load_state_dict(best_state_dict)
 
         if epoch % 1000 == 0:
@@ -215,120 +216,3 @@ def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, oppon
     current_optimizer.step()
 
     return policy_loss.item(), value_loss.item(), loss.item(), total_entropy / len(entropies)
-
-def process_batch_data_random(batch_data, rewards_collected, agent, optimizer, gamma, entropy_coeff, device):
-        
-        states, actions, old_log_probs, values, entropies = zip(*batch_data)
-        states = torch.stack(states).to(device)
-        actions = torch.tensor(actions, dtype=torch.long).to(device)
-        old_log_probs = torch.stack(old_log_probs).to(device)
-        values = torch.stack(values).to(device)
-        rewards = torch.tensor(rewards_collected, dtype=torch.float).to(device)
-        dones = torch.tensor(dones, dtype=torch.float).to(device)
-
-        with torch.no_grad():
-            next_value = agent.value(states[-1]).squeeze()
-        returns = compute_gae(next_value, rewards, dones, values, gamma)
-
-        returns = torch.tensor(returns, dtype=torch.float).to(device)
-        advantages = returns - values
-        advantages = (advantages - advantages.mean()) / (advantages.std() + 1e-8)
-
-        total_entropy = sum(entropies)
-
-        agent_policy, agent_value = agent(states)
-        new_log_probs = agent_policy.gather(1, actions.unsqueeze(1)).squeeze(1)
-        old_probs = torch.exp(old_log_probs)
-        new_probs = torch.exp(new_log_probs)
-        ratio = new_probs / old_probs
-
-        surr1 = ratio * advantages
-        surr2 = torch.clamp(ratio, 1.0 - 0.2, 1.0 + 0.2) * advantages
-        policy_loss = -torch.min(surr1, surr2).mean()
-
-        value_loss = 0.5 * (returns - agent_value.squeeze()).pow(2).mean()
-
-        loss = policy_loss + value_loss - entropy_coeff * total_entropy.mean()
-
-        optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
-
-        return policy_loss.item(), value_loss.item(), loss.item(), total_entropy.mean().item()
-
-
-
-def train_ppo_random(agent, opponent_agent, env, optimizer, opponent_optimizer, name, epochs, gamma, entropy_coeff, save_folder, batch_size, device):
-    wandb.init(project="adversarial_dlr", name=name)
-    
-    model_save_path = lambda epoch: os.path.join(save_folder, f'{name}_trained_agent_epoch_{epoch}.pth')
-    final_model_save_path = os.path.join(save_folder, f'{name}_trained_agent.pth')
-
-    os.makedirs(save_folder, exist_ok=True)
-
-    best_state_dict = agent.state_dict()
-
-    for epoch in range(epochs):
-        observations, _ = env.reset()
-        observations = {k: torch.from_numpy(v).float().to(device) for k, v in observations.items()}
-        done = False
-        
-        scores = {agent_name: 0 for agent_name in env.agents}
-        batch_data = []
-        episode_length = 0
-        max_episode_length = 10000
-        best_score = -float('inf')
-
-        while not done and episode_length < max_episode_length:
-            actions = {}
-            rewards_collected = []
-            for agent_name, state in observations.items():
-                if agent_name == 'first_0':  # Only process for the first agent
-                    flat_state = torch.from_numpy(state.flatten()).float() if isinstance(state, np.ndarray) else state.flatten().float()
-                    flat_state = flat_state.to(device)
-                    action, log_prob, value, entropy = agent.act(flat_state, device)
-                    batch_data.append((flat_state, action, log_prob, value, entropy))
-                else:
-                    # Generate a random action for the opponent
-                    action_space = env.action_space(agent_name)
-                    action = np.random.randint(action_space.n)
-
-                actions[agent_name] = action
-
-            step_results = env.step(actions)
-            next_observations, rewards, dones, _, _ = step_results
-            rewards_collected.append(rewards['first_0'])
-
-
-            scores['first_0'] += rewards['first_0']
-            if 'first_0' in batch_data:
-                batch_data[-1] += (rewards['first_0'], dones['first_0'])
-
-            episode_length += 1
-            done = any(dones.values())
-            observations = next_observations
-
-        average_reward = scores['first_0'] / episode_length
-
-        policy_loss, value_loss, loss, entropy = process_batch_data_random(batch_data,rewards_collected ,agent, optimizer, gamma, entropy_coeff, device)
-        
-
-        wandb.log({
-            'epoch': epoch,
-            'episode_length': episode_length,
-            'average_reward': average_reward,
-            'policy_loss': policy_loss,
-            'value_loss': value_loss,
-            'total_loss': loss,
-            'entropy': entropy
-        })
-
-        if average_reward > best_score:
-            best_score = average_reward
-            best_state_dict = agent.state_dict()
-
-        if epoch % 1000 == 0:
-            torch.save(agent.state_dict(), model_save_path(epoch))
-
-    torch.save(best_state_dict, final_model_save_path)
-
