@@ -17,13 +17,14 @@ class Defaults(Parameters):
     batch_size: int = 32  
     isServer: bool = True
     gamma: float = 99
+    random: bool = True
 
 
-    def run(self, name: str, epochs: int, batch_size: int, gamma: float):
+    def run(self, name: str, epochs: int, batch_size: int, gamma: float, random: bool):
         entropy_coef=0.02
-        self.train_agent(self=self,name=name, epochs=epochs, batch_size=batch_size, gamma=gamma,entropy_coeff=entropy_coef)
+        self.train_agent(self=self,name=name, epochs=epochs, batch_size=batch_size, gamma=gamma,entropy_coeff=entropy_coef, random=random)
 
-    def train_agent(self, name, epochs, batch_size, gamma,entropy_coeff):
+    def train_agent(self, name, epochs, batch_size, gamma,entropy_coeff,random):
         print("Starting training with PPO Agent")
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         env = pong_v3.parallel_env()
@@ -36,7 +37,10 @@ class Defaults(Parameters):
         opponent_optimizer = optim.Adam(opponent_agent.parameters(), lr=3e-4)  # Separate optimizer for opponent
 
         save_folder = '/zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL/agents/'
-        train_ppo_random(agent=agent, opponent_agent=opponent_agent, env=env, optimizer=optimizer, opponent_optimizer=opponent_optimizer, name=name, epochs=epochs, entropy_coeff=entropy_coeff, gamma=gamma, save_folder=save_folder, batch_size=batch_size, device=device)
+        if random:
+            train_ppo_random(agent=agent, opponent_agent=opponent_agent, env=env, optimizer=optimizer, opponent_optimizer=opponent_optimizer, name=name, epochs=epochs, entropy_coeff=entropy_coeff, gamma=gamma, save_folder=save_folder, batch_size=batch_size, device=device)
+        else:
+            train_ppo(agent=agent, opponent_agent=opponent_agent, env=env, optimizer=optimizer, opponent_optimizer=opponent_optimizer, name=name, epochs=epochs, entropy_coeff=entropy_coeff, gamma=gamma, save_folder=save_folder, batch_size=batch_size, device=device)
 
 # Start the program
 Defaults.start()
