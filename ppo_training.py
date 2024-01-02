@@ -92,26 +92,34 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
 
         while not done and episode_length < max_episode_length:
             actions = {}
+            log_probs = {}
+            values = {}
+            entropies = {}
             for agent_name, state in observations.items():
                 flat_state = torch.from_numpy(state.flatten()).float() if isinstance(state, np.ndarray) else state.flatten().float()
                 flat_state = flat_state.to(device)
                 current_agent = agent if agent_name == 'first_0' else opponent_agent
                 action, log_prob, value, entropy = current_agent.act(flat_state, device)
-
                 actions[agent_name] = action
-                batch_data[agent_name].append((flat_state, action, log_prob, value, entropy))
+                log_probs[agent_name] = log_prob
+                values[agent_name] = value
+                entropies[agent_name] = entropy
 
             step_results = env.step(actions)
             next_observations, rewards, dones, _, _ = step_results
-            
 
             for agent_name in env.agents:
                 scores[agent_name] += rewards[agent_name]
-                batch_data[agent_name][-1] += (rewards[agent_name], dones[agent_name])
+                # Add all data including rewards and dones here
+                flat_state = torch.from_numpy(observations[agent_name].flatten()).float() if isinstance(observations[agent_name], np.ndarray) else observations[agent_name].flatten().float()
+                flat_state = flat_state.to(device)
+                action, log_prob, value, entropy = actions[agent_name], log_probs[agent_name], values[agent_name], entropies[agent_name]
+                batch_data[agent_name].append((flat_state, actions[agent_name], log_probs[agent_name], values[agent_name], entropies[agent_name], rewards[agent_name], dones[agent_name]))
 
             episode_length += 1
             done = any(dones.values())
             observations = next_observations
+
         
         current_score = sum(scores.values())
         if current_score < best_score:
@@ -134,6 +142,7 @@ def train_ppo(agent, opponent_agent, env, optimizer, opponent_optimizer, name, e
         wandb.log({
             'epoch': epoch,
             'episode_length': episode_length,
+            'scores': scores,  # This logs the scores dictionary
             'average_policy_loss': total_policy_loss / episode_length,
             'average_value_loss': total_value_loss / episode_length,
             'average_total_loss': total_loss / episode_length,
@@ -207,87 +216,14 @@ def process_batch_data(agent_name, data, agent, opponent_agent, optimizer, oppon
 
     return policy_loss.item(), value_loss.item(), loss.item(), total_entropy / len(entropies)
 
-
-
-def train_ppo_random(agent, opponent_agent, env, optimizer, opponent_optimizer, name, epochs, gamma, entropy_coeff, save_folder, batch_size, device):
-    wandb.init(project="adversarial_dlr", name=name)
-    
-    model_save_path = lambda epoch: os.path.join(save_folder, f'{name}_trained_agent_epoch_{epoch}.pth')
-    final_model_save_path = os.path.join(save_folder, f'{name}_trained_agent.pth')
-
-    os.makedirs(save_folder, exist_ok=True)
-
-    best_state_dict = agent.state_dict()
-
-    for epoch in range(epochs):
-        observations, _ = env.reset()
-        observations = {k: torch.from_numpy(v).float().to(device) for k, v in observations.items()}
-        done = False
+def process_batch_data_random(batch_data, rewards_collected, agent, optimizer, gamma, entropy_coeff, device):
         
-        scores = {agent_name: 0 for agent_name in env.agents}
-        batch_data = []
-        episode_length = 0
-        max_episode_length = 10000
-        best_score = -float('inf')
-
-        while not done and episode_length < max_episode_length:
-            actions = {}
-            for agent_name, state in observations.items():
-                if agent_name == 'first_0':
-                    flat_state = torch.from_numpy(state.flatten()).float() if isinstance(state, np.ndarray) else state.flatten().float()
-                    flat_state = flat_state.to(device)
-                    action, log_prob, value, entropy = agent.act(flat_state, device)
-                    batch_data.append((flat_state, action, log_prob, value, entropy))
-                else:
-                    action_space = env.action_space(agent_name)
-                    action = np.random.randint(action_space.n)
-
-                actions[agent_name] = action
-
-            step_results = env.step(actions)
-            next_observations, rewards, dones, _, _ = step_results
-
-            scores['first_0'] += rewards['first_0']
-            if 'first_0' in batch_data:
-                batch_data[-1] += (rewards['first_0'], dones['first_0'])
-
-            episode_length += 1
-            done = any(dones.values())
-            observations = next_observations
-
-        average_reward = scores['first_0'] / episode_length
-
-        policy_loss, value_loss, loss, entropy = process_batch_data_random(batch_data, agent, optimizer, gamma, entropy_coeff, device)
-        
-
-        wandb.log({
-            'epoch': epoch,
-            'episode_length': episode_length,
-            'average_reward': average_reward,
-            'policy_loss': policy_loss,
-            'value_loss': value_loss,
-            'total_loss': loss,
-            'entropy': entropy
-        })
-
-        if average_reward > best_score:
-            best_score = average_reward
-            best_state_dict = agent.state_dict()
-
-        if epoch % 1000 == 0:
-            torch.save(agent.state_dict(), model_save_path(epoch))
-
-    torch.save(best_state_dict, final_model_save_path)
-
-
-    def process_batch_data_random(batch_data, agent, optimizer, gamma, entropy_coeff, device):
-        states, actions, old_log_probs, values, entropies, rewards, dones = zip(*batch_data)
-
+        states, actions, old_log_probs, values, entropies = zip(*batch_data)
         states = torch.stack(states).to(device)
         actions = torch.tensor(actions, dtype=torch.long).to(device)
         old_log_probs = torch.stack(old_log_probs).to(device)
         values = torch.stack(values).to(device)
-        rewards = torch.tensor(rewards, dtype=torch.float).to(device)
+        rewards = torch.tensor(rewards_collected, dtype=torch.float).to(device)
         dones = torch.tensor(dones, dtype=torch.float).to(device)
 
         with torch.no_grad():
@@ -319,3 +255,80 @@ def train_ppo_random(agent, opponent_agent, env, optimizer, opponent_optimizer, 
         optimizer.step()
 
         return policy_loss.item(), value_loss.item(), loss.item(), total_entropy.mean().item()
+
+
+
+def train_ppo_random(agent, opponent_agent, env, optimizer, opponent_optimizer, name, epochs, gamma, entropy_coeff, save_folder, batch_size, device):
+    wandb.init(project="adversarial_dlr", name=name)
+    
+    model_save_path = lambda epoch: os.path.join(save_folder, f'{name}_trained_agent_epoch_{epoch}.pth')
+    final_model_save_path = os.path.join(save_folder, f'{name}_trained_agent.pth')
+
+    os.makedirs(save_folder, exist_ok=True)
+
+    best_state_dict = agent.state_dict()
+
+    for epoch in range(epochs):
+        observations, _ = env.reset()
+        observations = {k: torch.from_numpy(v).float().to(device) for k, v in observations.items()}
+        done = False
+        
+        scores = {agent_name: 0 for agent_name in env.agents}
+        batch_data = []
+        episode_length = 0
+        max_episode_length = 10000
+        best_score = -float('inf')
+
+        while not done and episode_length < max_episode_length:
+            actions = {}
+            rewards_collected = []
+            for agent_name, state in observations.items():
+                if agent_name == 'first_0':  # Only process for the first agent
+                    flat_state = torch.from_numpy(state.flatten()).float() if isinstance(state, np.ndarray) else state.flatten().float()
+                    flat_state = flat_state.to(device)
+                    action, log_prob, value, entropy = agent.act(flat_state, device)
+                    batch_data.append((flat_state, action, log_prob, value, entropy))
+                else:
+                    # Generate a random action for the opponent
+                    action_space = env.action_space(agent_name)
+                    action = np.random.randint(action_space.n)
+
+                actions[agent_name] = action
+
+            step_results = env.step(actions)
+            next_observations, rewards, dones, _, _ = step_results
+            rewards_collected.append(rewards['first_0'])
+
+
+            scores['first_0'] += rewards['first_0']
+            if 'first_0' in batch_data:
+                batch_data[-1] += (rewards['first_0'], dones['first_0'])
+
+            episode_length += 1
+            done = any(dones.values())
+            observations = next_observations
+
+        average_reward = scores['first_0'] / episode_length
+
+        policy_loss, value_loss, loss, entropy = process_batch_data_random(batch_data,rewards_collected ,agent, optimizer, gamma, entropy_coeff, device)
+        
+
+        wandb.log({
+            'epoch': epoch,
+            'episode_length': episode_length,
+            'average_reward': average_reward,
+            'policy_loss': policy_loss,
+            'value_loss': value_loss,
+            'total_loss': loss,
+            'entropy': entropy
+        })
+
+        if average_reward > best_score:
+            best_score = average_reward
+            best_state_dict = agent.state_dict()
+
+        if epoch % 1000 == 0:
+            torch.save(agent.state_dict(), model_save_path(epoch))
+
+    torch.save(best_state_dict, final_model_save_path)
+
