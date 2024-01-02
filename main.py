@@ -1,3 +1,7 @@
+import sys
+
+# Print the path to the Python interpreter
+print("Python interpreter path:", sys.executable)
 from pettingzoo.atari import pong_v3
 from ppo_training import PPOAgent, train_ppo, train_ppo_random 
 import torch.optim as optim
