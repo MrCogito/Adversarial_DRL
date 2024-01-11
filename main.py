@@ -21,28 +21,33 @@ class Defaults(Parameters):
     batch_size: int = 32  
     isServer: bool = True
     gamma: float = 99
+    lr: float = 0.003
 
 
 
-    def run(self, name: str, epochs: int, batch_size: int, gamma: float):
-        entropy_coef=0.02
-        self.train_agent(self=self,name=name, epochs=epochs, batch_size=batch_size, gamma=gamma,entropy_coeff=entropy_coef)
+    def run(self, name: str, epochs: int, batch_size: int, gamma: float, lr: float):
+        entropy_coef=0.15
+        self.train_agent(self=self,name=name, epochs=epochs, batch_size=batch_size, gamma=gamma,entropy_coeff=entropy_coef, lr=lr)
 
-    def train_agent(self, name, epochs, batch_size, gamma,entropy_coeff):
+    def train_agent(self, name, epochs, batch_size, gamma, entropy_coeff, lr):
         print("Starting training with PPO Agent")
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         env = pong_v3.parallel_env()
         output_dim = env.action_space('first_0').n
         input_dim = np.prod(env.observation_space('first_0').shape)
 
-        agent = PPOAgent(input_dim, output_dim).to(device)
-        opponent_agent = PPOAgent(input_dim, output_dim).to(device)  # Create opponent agent
-        optimizer = optim.Adam(agent.parameters(), lr=3e-4)
-        opponent_optimizer = optim.Adam(opponent_agent.parameters(), lr=3e-4)  # Separate optimizer for opponent
+        input_channels = 3  # RGB channels
+        input_height = 210  # Height of the Atari frame
+        input_width = 160   # Width of the Atari frame
+        output_dim = 6      # Number of discrete actions in the Pong game
+
+        agent = PPOAgent(input_channels, input_height, input_width, output_dim).to(device)
+
+        optimizer = optim.Adam(agent.parameters(), lr=lr)
 
         save_folder = '/zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL/agents/'
 
-        train_ppo(agent=agent, opponent_agent=opponent_agent, env=env, optimizer=optimizer, opponent_optimizer=opponent_optimizer, name=name, epochs=epochs, entropy_coeff=entropy_coeff, gamma=gamma, save_folder=save_folder, batch_size=batch_size, device=device)
+        train_ppo(agent=agent, env=env, optimizer=optimizer, name=name, epochs=epochs, entropy_coeff=entropy_coeff, gamma=gamma, save_folder=save_folder, batch_size=batch_size, device=device)
 
 # Start the program
 Defaults.start()
