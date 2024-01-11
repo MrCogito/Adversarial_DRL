@@ -142,7 +142,7 @@ def train_ppo(agent, env, optimizer, name, epochs, gamma, entropy_coeff, save_fo
             
             for agent_name, state in observations.items():
                 
-                print("State before preprocessing:", state.shape) 
+               # print("State before preprocessing:", state.shape) 
                 if isinstance(state, np.ndarray):
                     # Convert from NumPy array to tensor, normalize, and permute dimensions
                     state = torch.from_numpy(state).float().to(device) / 255.0
@@ -157,7 +157,7 @@ def train_ppo(agent, env, optimizer, name, epochs, gamma, entropy_coeff, save_fo
                         # If it's (batch, height, width, channels), permute to (batch, channels, height, width)
                         state = state.permute(0, 3, 1, 2)
 
-                print("State after preprocessing:", state.shape) 
+                #print("State after preprocessing:", state.shape) 
                 current_agent = agent if agent_name == 'first_0' else opponent_agent
                 action_space = env.action_space(agent_name)
                 action, log_prob, value, entropy = current_agent.act(state, device, action_space)
