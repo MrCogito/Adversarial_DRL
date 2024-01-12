@@ -84,7 +84,7 @@ class PPOAgent(nn.Module):
 
 
 
-def compute_gae(next_value, rewards, masks, values, gamma=0.99, tau=0.95):
+def compute_gae(next_value, rewards, masks, values, gamma=1, tau=0.7):
     next_value = next_value.unsqueeze(0) if next_value.dim() == 1 else next_value
     values = torch.cat([values, next_value], dim=0)
     gae = 0
@@ -140,6 +140,7 @@ def train_ppo(agent, env, optimizer, name, epochs, gamma, entropy_coeff, save_fo
             values = {}
             entropies = {}
             
+            
             for agent_name, state in observations.items():
                 
                # print("State before preprocessing:", state.shape) 
@@ -172,12 +173,15 @@ def train_ppo(agent, env, optimizer, name, epochs, gamma, entropy_coeff, save_fo
 
             for agent_name in env.agents:
                 scores[agent_name] += rewards[agent_name]
+                 # Normalize the score
+                normalized_score = scores[agent_name] / 20 #20 is max num of points
+                
                 rewards_history[agent_name].append(rewards[agent_name])
                 # Collect data for batch processing
                 flat_state = torch.from_numpy(observations[agent_name].flatten()).float() if isinstance(observations[agent_name], np.ndarray) else observations[agent_name].flatten().float()
                 flat_state = flat_state.to(device)
                 batch_data[agent_name].append(
-                                             (flat_state, actions[agent_name], log_probs[agent_name], values[agent_name], entropies[agent_name], rewards[agent_name], dones[agent_name])
+                                             (flat_state, actions[agent_name], log_probs[agent_name], values[agent_name], entropies[agent_name], normalized_score, dones[agent_name])
                                              )                           
 
             if len(batch_data) >= batch_data_threshold:
@@ -221,7 +225,7 @@ def train_ppo(agent, env, optimizer, name, epochs, gamma, entropy_coeff, save_fo
             'average_value_loss': total_value_loss / episode_length,
             'average_total_loss': total_loss / episode_length,
             'average_entropy': total_entropy / episode_length,
-            'agent_rewards':  rewards,
+            'agent_rewards_normalized':  normalized_score,
             'opponent_rewards': rewards_history['first_0'],
             'action_distribution': dict(action_counts)
         })
