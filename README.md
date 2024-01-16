@@ -14,8 +14,6 @@ Deep Reinforcement Learning (DRL) has a wide range of applications, such as enab
 
 # Checklist 
 - [X] Write description
-- [ ] write implementation
-- [ ] write resutls
 - [X] Connect to HCP
 **Code**
 - [X] Run 2 random pong agents env 
