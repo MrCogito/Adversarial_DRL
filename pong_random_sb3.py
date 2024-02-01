@@ -9,10 +9,16 @@ model_path = '/home/karol/Adversarial_DRL/rl-baselines3-zoo/logs/ppo/PongNoFrame
 model = PPO.load(model_path)
 
 # Initialize the environment
-env = pong_v3.parallel_env(obs_type='rgb_image', render_mode='human')
+#env = pong_v3.parallel_env(obs_type='rgb_image', render_mode='human')
+env = pong_v3.parallel_env(obs_type='rgb_image')
 
-# Reset environment and unpack observations and additional info
-observations, info = env.reset()  # Assuming env.reset() returns observations directly
+# Preprocess the environment
+env = ss.color_reduction_v0(env, mode='B')  # Convert to grayscale
+env = ss.resize_v1(env, x_size=84, y_size=84)  # Resize the observations
+env = ss.frame_stack_v1(env, 4)  # Stack the last 4 frames
+
+# Reset environment
+observations, infos = env.reset()  # Directly use the returned dictionary
 
 num_games = 1
 wins_first_0 = 0
@@ -24,32 +30,24 @@ for game in range(num_games):
         actions = {}
         for agent in env.agents:
             if agent == 'first_0':
-                obs = observations[agent]  # Correctly access observations
+                obs = observations[agent]  # Directly access the observation
                 action, _states = model.predict(obs, deterministic=True)
                 actions[agent] = action
             elif agent == 'second_0':
-                actions[agent] = random.choice(list(range(6)))  # Random actions for the second agent
+                actions[agent] = random.choice(list(range(6)))
             else:
                 raise ValueError(f"Unknown agent: {agent}")
 
-        # Step the environment and properly unpack observations
-        temp, rewards, terminations, truncations, infos = env.step(actions)
-        if isinstance(temp, tuple):  # Proper check for unpacking
-            observations, _ = temp  # If env.step() returns a tuple
-        else:
-            observations = temp  # Direct assignment if not a tuple
+        # Step the environment and use the returned observations directly
+        observations, rewards, terminations, truncations, infos = env.step(actions)
         
         score_first_0 += rewards['first_0']
         if any(terminations.values()) or any(truncations.values()):
             break
 
-    temp = env.reset()  # Reset for the next game
-    if isinstance(temp, tuple):  # Check and unpack
-        observations, _ = temp
-    else:
-        observations = temp
+    # Reset environment for the next game
+    observations, infos = env.reset()
 
-    # Determine game outcome
     if score_first_0 > 0:
         wins_first_0 += 1
     else:
