@@ -2,20 +2,11 @@ import time
 from pynput import keyboard
 from pettingzoo.atari import pong_v3
 import random
-import torch
-from ppo_training import PPOAgent
 
 # Global variable to store the current action and human frame counter
 current_action = 0
 human_frame_counter = 0
 delay = 0.003 # make game slower
-
-def load_model(model_path, input_dim, output_dim, device):
-    
-    model = PPOAgent(input_dim, output_dim)
-    model.load_state_dict(torch.load(model_path, map_location=device))
-    model.to(device)
-    return model
 
 # Define the step pattern (1 = action allowed, 0 = action not allowed)
 
@@ -44,15 +35,6 @@ def main():
 
     global human_frame_counter
 
-    #input_dim = env.observation_space('first_0').shape[0]
-    #output_dim = env.action_space('first_0').n
-    input_dim = 210 * 160 * 3
-    output_dim = env.action_space('first_0').n
-
-    # Load the trained model
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    trained_model = load_model("exp20kTest32-0_agent_trained_agent_epoch_7200.pth", input_dim, output_dim, device)
-
     for agent in env.agent_iter():
         env.render()
         observation, reward, termination, truncation, info = env.last()
@@ -66,9 +48,8 @@ def main():
             else:
                 action = current_action
         else:
-            #action = random.choice(list(range(6)))  # Random action for the second_0 agent
-            obs_tensor = torch.from_numpy(observation).float().to(device)
-            action, _, _, _ = trained_model.act(obs_tensor, device)
+            action = random.choice(list(range(6)))  # Random action for the second_0 agent
+
         env.step(action)
 
         # Introduce a delay to slow down the game
