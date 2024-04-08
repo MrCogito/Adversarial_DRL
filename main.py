@@ -8,6 +8,7 @@ import torch.optim as optim
 import numpy as np
 import torch
 from dtu import Parameters, dtu, GPU
+from supersuit import color_reduction_v0, frame_stack_v1, resize_v1
 
 @dtu
 class Defaults(Parameters):
@@ -25,21 +26,22 @@ class Defaults(Parameters):
 
 
 
-    def run(self, name: str, epochs: int, batch_size: int, gamma: float, lr: float):
-        entropy_coef=0.15
-        self.train_agent(self=self,name=name, epochs=epochs, batch_size=batch_size, gamma=gamma,entropy_coeff=entropy_coef, lr=lr)
-
     def train_agent(self, name, epochs, batch_size, gamma, entropy_coeff, lr):
         print("Starting training with PPO Agent")
         device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         env = pong_v3.parallel_env()
-        output_dim = env.action_space('first_0').n
-        input_dim = np.prod(env.observation_space('first_0').shape)
 
-        input_channels = 3  # RGB channels
-        input_height = 210  # Height of the Atari frame
-        input_width = 160   # Width of the Atari frame
-        output_dim = 6      # Number of discrete actions in the Pong game
+        # Apply SuperSuit transformations
+        env = color_reduction_v0(env, mode='B')  # Convert to grayscale
+        env = resize_v1(env, x_size=80, y_size=80)  # Resize to 80x80
+        env = frame_stack_v1(env, 4)  # Stack 4 frames
+
+        output_dim = env.action_space('first_0').n
+
+        # Adjust input dimensions to match the preprocessing
+        input_channels = 1  # Grayscale means only 1 channel
+        input_height = 80   # Height after resize
+        input_width = 80    # Width after resize
 
         agent = PPOAgent(input_channels, input_height, input_width, output_dim).to(device)
 
