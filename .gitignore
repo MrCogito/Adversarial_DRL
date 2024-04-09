@@ -5,3 +5,5 @@ venv/
 outputs/
 agents/
 wandb/
+connect_four/c4_env/
+c4env/
