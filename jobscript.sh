@@ -10,8 +10,8 @@
 #BSUB -R "span[hosts=1]"
 
 # Activate the virtual environment
-source /zhome/59/9/198225/Adversarial_DRL/venvdtu/bin/activate
-
+source /zhome/59/9/198225/Desktop/Adversarial_DRL/project-env/bin/activate
 # <loading of any additional modules, dependencies etc.>
-echo "Running PPO Agent Train script..."
-python3 /zhome/59/9/198225/Adversarial_DRL/ppo_agent_train.py
+echo "Running scri script..."
+python3 /zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL/tutorialcode.py
+
