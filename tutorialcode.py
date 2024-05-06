@@ -723,7 +723,7 @@ if __name__ == "__main__":
             wandb.init(
                 # set the wandb project where this run will be logged
                 project="AgileRL",
-                name="{}-NewEval-{}-{}Opposition-CNN-{}".format(
+                name="{}-MultisaveOnlyself-{}-{}Opposition-CNN-{}".format(
                     "connect_four_v3",
                     INIT_HP["ALGO"],
                     LESSON["opponent"],
@@ -1088,6 +1088,11 @@ if __name__ == "__main__":
                     f"eval/action_{index}": action
                     for index, action in enumerate(eval_actions_hist)
                 }
+                if (idx_epi + 1) % 500 == 0:
+                    save_path = f"{LESSON['save_path']}_epoch_{idx_epi+1}"
+                    os.makedirs(os.path.dirname(save_path), exist_ok=True)
+                    elite.saveCheckpoint(save_path)
+                    print(f"Elite agent saved to '{save_path}' after {idx_epi+1} epochs.")
 
                 wandb_dict = {
                     "global_step": total_steps,
