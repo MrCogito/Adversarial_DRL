@@ -54,7 +54,7 @@ class CurriculumEnv:
             mem_full = len(memory)
             self.reset()  # Reset environment at start of episode
             observation, reward, done, truncation, _ = self.last()
-
+            reward = -reward
             (
                 p1_state,
                 p1_state_flipped,
@@ -79,6 +79,7 @@ class CurriculumEnv:
                         p0_action = opponent.getAction(player=0)
                 self.step(p0_action)  # Act in environment
                 observation, env_reward, done, truncation, _ = self.last()
+                env_reward = -env_reward
                 p0_next_state, p0_next_state_flipped = transform_and_flip(
                     observation, player=0
                 )
@@ -135,6 +136,7 @@ class CurriculumEnv:
                             p1_action = opponent.getAction(player=1)
                     self.step(p1_action)  # Act in environment
                     observation, env_reward, done, truncation, _ = self.last()
+                    env_reward = -env_reward
                     p1_next_state, p1_next_state_flipped = transform_and_flip(
                         observation, player=1
                     )
@@ -496,6 +498,51 @@ def transform_and_flip(observation, player):
     state_flipped = np.expand_dims(np.flip(state, 2), 0)
     state = np.expand_dims(state, 0)
     return state, state_flipped
+def evaluate_agent_vs_random(agent, env, games=50):
+    wins = 0
+    for _ in range(games):
+        env.reset()
+        observation, cumulative_reward, done, truncation, _ = env.last()
+        cumulative_reward = -cumulative_reward
+        
+        player = -1  # Tracker for which player's turn it is
+        opponent = Opponent(env, difficulty='random')
+        opponent_first = random.random() > 0.5
+        score = 0
+
+        for idx_step in range(max_steps):
+            action_mask = observation['action_mask']
+            if player < 0:
+                if opponent_first:
+                    action = opponent.getAction(action_mask)
+                else:
+                    state = np.moveaxis(observation['observation'], [-1], [-3])
+                    state = np.expand_dims(state, 0)
+                    action = agent.getAction(state, 0, action_mask)[0]
+            else:
+                if not opponent_first:
+                    action = opponent.getAction(action_mask)
+                else:
+                    state = np.moveaxis(observation['observation'], [-1], [-3])
+                    state[[0, 1], :, :] = state[[1, 0], :, :]
+                    state = np.expand_dims(state, 0)
+                    action = agent.getAction(state, 0, action_mask)[0]
+
+            env.step(action)
+            observation, cumulative_reward, done, truncation, _ = env.last()
+            cumulative_reward = -cumulative_reward
+            
+            if (player > 0 and opponent_first) or (player < 0 and not opponent_first):
+                score = cumulative_reward
+            
+            if done or truncation:
+                if score > 0:  # Check if the agent won
+                    wins += 1
+                break
+
+            player *= -1
+
+    return wins / games  # Return the win rate
 
 
 if __name__ == "__main__":
@@ -520,7 +567,7 @@ if __name__ == "__main__":
 
         # Define the initial hyperparameters
         INIT_HP = {
-            "POPULATION_SIZE": 6,
+            "POPULATION_SIZE": 1,
             # "ALGO": "Rainbow DQN",  # Algorithm
             "ALGO": "DQN",  # Algorithm
             "DOUBLE": True,
@@ -672,7 +719,7 @@ if __name__ == "__main__":
             wandb.init(
                 # set the wandb project where this run will be logged
                 project="AgileRL",
-                name="{}-EvoHPO-{}-{}Opposition-CNN-{}".format(
+                name="{}-OneAgentFixedRewardsEvoHPO-{}-{}Opposition-CNN-{}".format(
                     "connect_four_v3",
                     INIT_HP["ALGO"],
                     LESSON["opponent"],
@@ -699,6 +746,7 @@ if __name__ == "__main__":
                 for episode in range(episodes_per_epoch):
                     env.reset()  # Reset environment at start of episode
                     observation, cumulative_reward, done, truncation, _ = env.last()
+                    cumulative_reward = -cumulative_reward
 
                     (
                         p1_state,
@@ -752,6 +800,7 @@ if __name__ == "__main__":
 
                         env.step(p0_action)  # Act in environment
                         observation, cumulative_reward, done, truncation, _ = env.last()
+                        cumulative_reward = -cumulative_reward
                         p0_next_state, p0_next_state_flipped = transform_and_flip(
                             observation, player=0
                         )
@@ -832,6 +881,7 @@ if __name__ == "__main__":
                             observation, cumulative_reward, done, truncation, _ = (
                                 env.last()
                             )
+                            cumulative_reward = -cumulative_reward
                             p1_next_state, p1_next_state_flipped = transform_and_flip(
                                 observation, player=1
                             )
@@ -920,6 +970,11 @@ if __name__ == "__main__":
 
             mean_turns = np.mean(turns_per_episode)
 
+
+            # Evaluate best agent vs random opponent for win rate
+            if pop:
+                best_agent = pop[0]
+            win_rate = evaluate_agent_vs_random(best_agent, env, games=50)
             # Now evolve population if necessary
             if (idx_epi + 1) % evo_epochs == 0:
                 # Evaluate population vs random actions
@@ -935,6 +990,7 @@ if __name__ == "__main__":
                             observation, cumulative_reward, done, truncation, _ = (
                                 env.last()
                             )
+                            cumulative_reward = -cumulative_reward
 
                             player = -1  # Tracker for which player"s turn it is
 
@@ -987,6 +1043,7 @@ if __name__ == "__main__":
                                 observation, cumulative_reward, done, truncation, _ = (
                                     env.last()
                                 )
+                                cumulative_reward = -cumulative_reward
 
                                 if (player > 0 and opponent_first) or (
                                     player < 0 and not opponent_first
@@ -1037,6 +1094,7 @@ if __name__ == "__main__":
                     "eval/mean_fitness": np.mean(fitnesses),
                     "eval/best_fitness": np.max(fitnesses),
                     "eval/mean_turns_per_game": eval_turns,
+                    "eval/win_rate_vs_random": win_rate,
                 }
                 wandb_dict.update(train_actions_dict)
                 wandb_dict.update(eval_actions_dict)
