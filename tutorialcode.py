@@ -500,7 +500,7 @@ def transform_and_flip(observation, player):
     return state, state_flipped
 def evaluate_agent_vs_random(agent, env, games=100):
     wins, draws, losses = 0, 0, 0
-    for _ in range(games):
+    for i in range(games):
         env.reset()
         observation, cumulative_reward, done, truncation, _ = env.last()
         cumulative_reward = -cumulative_reward
