@@ -507,7 +507,7 @@ def evaluate_agent_vs_random(agent, env, games=100):
         
         player = -1  # Tracker for which player's turn it is
         opponent = Opponent(env, difficulty='random')
-        opponent_first = random.random() > 0.5
+        opponent_first = (i % 2 == 0)
         score = 0
 
         for idx_step in range(max_steps):
