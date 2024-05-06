@@ -498,8 +498,8 @@ def transform_and_flip(observation, player):
     state_flipped = np.expand_dims(np.flip(state, 2), 0)
     state = np.expand_dims(state, 0)
     return state, state_flipped
-def evaluate_agent_vs_random(agent, env, games=50):
-    wins = 0
+def evaluate_agent_vs_random(agent, env, games=100):
+    wins, draws, losses = 0, 0, 0
     for _ in range(games):
         env.reset()
         observation, cumulative_reward, done, truncation, _ = env.last()
@@ -536,13 +536,17 @@ def evaluate_agent_vs_random(agent, env, games=50):
                 score = cumulative_reward
             
             if done or truncation:
-                if score > 0:  # Check if the agent won
+                if score > 0:
                     wins += 1
+                elif score < 0:
+                    losses += 1
+                else:
+                    draws += 1
                 break
 
             player *= -1
 
-    return wins / games  # Return the win rate
+    return wins, draws, losses  # Return the win rate
 
 
 if __name__ == "__main__":
@@ -719,7 +723,7 @@ if __name__ == "__main__":
             wandb.init(
                 # set the wandb project where this run will be logged
                 project="AgileRL",
-                name="{}-OneAgentFixedRewardsEvoHPO-{}-{}Opposition-CNN-{}".format(
+                name="{}-NewEval-{}-{}Opposition-CNN-{}".format(
                     "connect_four_v3",
                     INIT_HP["ALGO"],
                     LESSON["opponent"],
@@ -974,7 +978,7 @@ if __name__ == "__main__":
             # Evaluate best agent vs random opponent for win rate
             if pop:
                 best_agent = pop[0]
-            win_rate = evaluate_agent_vs_random(best_agent, env, games=50)
+            wins, draws, losses = evaluate_agent_vs_random(best_agent, env, games=50)
             # Now evolve population if necessary
             if (idx_epi + 1) % evo_epochs == 0:
                 # Evaluate population vs random actions
@@ -1094,7 +1098,9 @@ if __name__ == "__main__":
                     "eval/mean_fitness": np.mean(fitnesses),
                     "eval/best_fitness": np.max(fitnesses),
                     "eval/mean_turns_per_game": eval_turns,
-                    "eval/win_rate_vs_random": win_rate,
+                    "eval/wins_vs_random": wins,
+                    "eval/draws_vs_random": draws,
+                    "eval/loses_vs_random": losses,
                 }
                 wandb_dict.update(train_actions_dict)
                 wandb_dict.update(eval_actions_dict)
