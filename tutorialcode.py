@@ -20,6 +20,8 @@ from agilerl.components.replay_buffer import ReplayBuffer
 from agilerl.hpo.mutation import Mutations
 from agilerl.hpo.tournament import TournamentSelection
 from agilerl.utils.utils import initialPopulation
+from agilerl.algorithms.dqn import DQN
+
 
 
 class CurriculumEnv:
@@ -549,6 +551,69 @@ def evaluate_agent_vs_random(agent, env, games=100):
     return wins, draws, losses  # Return the win rate
 
 
+def evaluate_agent_vs_trained(agent, trained_agent, env, games=100):
+    wins, draws, losses = 0, 0, 0
+    for i in range(games):
+        env.reset()
+        observation, cumulative_reward, done, truncation, _ = env.last()
+        cumulative_reward = -cumulative_reward
+
+        player = -1  # Tracker for which player's turn it is
+        opponent_first = (i % 2 == 0)
+        score = 0
+
+        for idx_step in range(max_steps):
+            action_mask = observation['action_mask']
+            if player < 0:  # The evaluation agent's turn
+                if not opponent_first:
+                    # Evaluation agent plays second
+                    state = np.moveaxis(observation['observation'], [-1], [-3])
+                    state = np.expand_dims(state, 0)
+                    action = agent.getAction(state, 0, action_mask)[0]
+                else:
+                    # Trained agent plays first
+                    state = np.moveaxis(observation['observation'], [-1], [-3])
+                    state = np.expand_dims(state, 0)
+                    action = trained_agent.getAction(state, 0, action_mask)[0]
+            else:  # The trained agent's turn
+                if opponent_first:
+                    # Trained agent plays first
+                    state = np.moveaxis(observation['observation'], [-1], [-3])
+                    state = np.expand_dims(state, 0)
+                    action = trained_agent.getAction(state, 0, action_mask)[0]
+                else:
+                    # Evaluation agent plays first
+                    state = np.moveaxis(observation['observation'], [-1], [-3])
+                    state[[0, 1], :, :] = state[[1, 0], :, :]
+                    state = np.expand_dims(state, 0)
+                    action = agent.getAction(state, 0, action_mask)[0]
+
+            # Perform action in environment
+            env.step(action)
+            observation, cumulative_reward, done, truncation, _ = env.last()
+            cumulative_reward = -cumulative_reward
+
+            # Update the score based on the current player's actions
+            if (player > 0 and opponent_first) or (player < 0 and not opponent_first):
+                score = cumulative_reward
+
+            # Break if the episode is complete
+            if done or truncation:
+                if score > 0:
+                    wins += 1
+                elif score < 0:
+                    losses += 1
+                else:
+                    draws += 1
+                break
+
+            # Switch the turn to the other player
+            player *= -1
+
+    # Return the win, draw, and loss counts
+    return wins, draws, losses
+
+
 if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     print("DEVICE: " + str(device))
@@ -606,6 +671,7 @@ if __name__ == "__main__":
         INIT_HP["MAX_ACTION"] = None
         INIT_HP["MIN_ACTION"] = None
 
+
         # Warp the environment in the curriculum learning wrapper
         env = CurriculumEnv(env, LESSON)
 
@@ -614,6 +680,17 @@ if __name__ == "__main__":
         # We flatten the 6x7x2 observation as input to the agent"s neural network
         state_dim = np.moveaxis(np.zeros(state_dim[0]), [-1], [-3]).shape
         action_dim = action_dim[0]
+
+
+        # LOAD PRETRAINED
+        path = "/zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL/models/DQN/epoch_3000onlyself4_trained_agent.pt"  # Path to saved agent checkpoint
+        dqn = DQN(
+            state_dim=state_dim,
+            action_dim=action_dim,
+            one_hot=one_hot,
+            device=device,
+        )  # Adjust parameters as needed
+        dqn.loadCheckpoint(path) 
 
         # Create a population ready for evolutionary hyper-parameter optimisation
         pop = initialPopulation(
@@ -676,7 +753,7 @@ if __name__ == "__main__":
         max_episodes = LESSON["max_train_episodes"]  # Total episodes
         max_steps = 500  # Maximum steps to take in each episode
         evo_epochs = 20  # Evolution frequency
-        evo_loop = 50  # Number of evaluation episodes
+        evo_loop = 100  # Number of evaluation episodes
         elite = pop[0]  # Assign a placeholder "elite" agent
         epsilon = 1.0  # Starting epsilon value
         eps_end = 0.1  # Final epsilon value
@@ -723,7 +800,7 @@ if __name__ == "__main__":
             wandb.init(
                 # set the wandb project where this run will be logged
                 project="AgileRL",
-                name="{}-MultisaveOnlyself-{}-{}Opposition-CNN-{}".format(
+                name="{}-DQN_onlyself-{}-{}Opposition-CNN-{}".format(
                     "connect_four_v3",
                     INIT_HP["ALGO"],
                     LESSON["opponent"],
@@ -742,6 +819,13 @@ if __name__ == "__main__":
         total_episodes = 0
         pbar = trange(int(max_episodes / episodes_per_epoch))
 
+
+        # Load pretrained agent 
+
+        # Pre-process dimensions for pytorch layers
+        # We will use self-play, so we only need to worry about the state dim of a single agent
+
+         # Load the trained model
         # Training loop
         for idx_epi in pbar:
             turns_per_episode = []
@@ -763,6 +847,8 @@ if __name__ == "__main__":
                     if LESSON["opponent"] == "self":
                         # Randomly choose opponent from opponent pool if using self-play
                         opponent = random.choice(opponent_pool)
+                    elif LESSON["opponent"] == "trained":
+                        opponent = dqn
                     else:
                         # Create opponent of desired difficulty
                         opponent = Opponent(env, difficulty=LESSON["opponent"])
@@ -792,6 +878,10 @@ if __name__ == "__main__":
                                 p0_action = opponent.getAction(
                                     p0_action_mask, p1_action, LESSON["block_vert_coef"]
                                 )
+                            elif LESSON["opponent"] == "trained":
+                                p0_action = opponent.getAction(
+                                    p0_state, 0, p0_action_mask
+                                )[0]
                             else:
                                 p0_action = opponent.getAction(player=0)
                         else:
@@ -871,6 +961,10 @@ if __name__ == "__main__":
                                         p0_action,
                                         LESSON["block_vert_coef"],
                                     )
+                                elif LESSON["opponent"] == "trained":
+                                    p1_action = opponent.getAction(
+                                        p1_state, 0, p1_action_mask
+                                    )[0]
                                 else:
                                     p1_action = opponent.getAction(player=1)
                             else:
@@ -978,7 +1072,9 @@ if __name__ == "__main__":
             # Evaluate best agent vs random opponent for win rate
             if pop:
                 best_agent = pop[0]
-            wins, draws, losses = evaluate_agent_vs_random(best_agent, env, games=50)
+            wins_rand, draws_rand, losses_rand = evaluate_agent_vs_random(best_agent, env, games=evo_loop)
+            wins_trained, draws_trained, losses_trained = evaluate_agent_vs_trained(agent, dqn, env, games=evo_loop)
+
             # Now evolve population if necessary
             if (idx_epi + 1) % evo_epochs == 0:
                 # Evaluate population vs random actions
@@ -1088,7 +1184,7 @@ if __name__ == "__main__":
                     f"eval/action_{index}": action
                     for index, action in enumerate(eval_actions_hist)
                 }
-                if (idx_epi + 1) % 500 == 0:
+                if (idx_epi + 1) % 100000 == 0:
                     save_path = f"epoch_{idx_epi+1}_{LESSON['save_path']}"
                     os.makedirs(os.path.dirname(save_path), exist_ok=True)
                     elite.saveCheckpoint(save_path)
@@ -1100,12 +1196,15 @@ if __name__ == "__main__":
                     "train/mean_turns_per_game": mean_turns,
                     "train/epsilon": epsilon,
                     "train/opponent_updates": opp_update_counter,
-                    "eval/mean_fitness": np.mean(fitnesses),
-                    "eval/best_fitness": np.max(fitnesses),
+                    "eval/mean_fitness_eval": np.mean(fitnesses),
+                    "eval/best_fitness_eval": np.max(fitnesses),
                     "eval/mean_turns_per_game": eval_turns,
-                    "eval/wins_vs_random": wins,
-                    "eval/draws_vs_random": draws,
-                    "eval/loses_vs_random": losses,
+                    "eval_rand/wins_vs_random": wins_rand,
+                    "eval_rand/draws_vs_random": draws_rand,
+                    "eval_rand/loses_vs_random": losses_rand,
+                    "eval_trained/wins_vs_random": wins_trained,
+                    "eval_trained/draws_vs_random": draws_trained,
+                    "eval_trained/loses_vs_random": losses_trained,
                 }
                 wandb_dict.update(train_actions_dict)
                 wandb_dict.update(eval_actions_dict)
