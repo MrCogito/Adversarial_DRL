@@ -10,8 +10,6 @@ Adversarial Policy Attacks exploit vulnerabilities in deep reinforcement learnin
 ### Asumptions 
 1. The adversary is allowed unlimited black-box access to the actions sampled from victims policy, but do not have any white-box information such as weights or activations.
 2. The victim follows fixed stochastic policy with static weights, reflecting common practices in deploying RL models to prevent new issues from developing during retraining.
-### Training 
-Here's how you can rewrite the paragraph using the GitHub-compatible mathematical expressions mentioned:
 
 ### Training Process
 
