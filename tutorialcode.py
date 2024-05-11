@@ -1089,7 +1089,7 @@ if __name__ == "__main__":
                     for index, action in enumerate(eval_actions_hist)
                 }
                 if (idx_epi + 1) % 500 == 0:
-                    save_path = f"{LESSON['save_path']}_epoch_{idx_epi+1}"
+                    save_path = f"epoch_{idx_epi+1}_{LESSON['save_path']}"
                     os.makedirs(os.path.dirname(save_path), exist_ok=True)
                     elite.saveCheckpoint(save_path)
                     print(f"Elite agent saved to '{save_path}' after {idx_epi+1} epochs.")
