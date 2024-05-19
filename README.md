@@ -51,6 +51,9 @@ The MDP dynamics will be unknown to the adversary because the victim's policy is
 
 # Implementation
 
+### Add 
+- finding out of distribution states
+- theory for dqn
 
 
 # Results
