@@ -5,8 +5,8 @@
 #BSUB -n 4
 #BSUB -W 10:00
 #BSUB -R "rusage[mem=32GB]"
-#BSUB -o /zhome/59/9/198225/Adversarial_DRL/myjob.out
-#BSUB -e /zhome/59/9/198225/Adversarial_DRL/myjob.err
+#BSUB -o /zhome/59/9/198225/Desktop/Adversarial_DRLa/myjob.out
+#BSUB -e /zhome/59/9/198225/Desktop/Adversarial_DRLa/myjob.err
 #BSUB -R "span[hosts=1]"
 
 # Activate the virtual environment

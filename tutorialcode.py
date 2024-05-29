@@ -552,7 +552,7 @@ def evaluate_agent_vs_random(agent, env, games=100):
 
 def evaluate_agent_vs_trained(agent, env, trained_agent, games=100):
     wins, draws, losses = 0, 0, 0
-    epsilon = 0.05
+    epsilon = 0.01
     for i in range(games):
         env.reset()
         observation, cumulative_reward, done, truncation, _ = env.last()
@@ -604,7 +604,7 @@ if __name__ == "__main__":
 
     for lesson_number in range(1, 5):
         # Load lesson for curriculum
-        with open(f"./curriculums3/connect_four/lesson{lesson_number}.yaml") as file:
+        with open(f"./curriculumsVictim/connect_four/lesson{lesson_number}.yaml") as file:
             LESSON = yaml.safe_load(file)
 
         # Define the network configuration
@@ -619,12 +619,12 @@ if __name__ == "__main__":
 
         # Define the initial hyperparameters
         INIT_HP = {
-            "POPULATION_SIZE": 1,
+            "POPULATION_SIZE": 6,
             # "ALGO": "Rainbow DQN",  # Algorithm
             "ALGO": "DQN",  # Algorithm
             "DOUBLE": True,
             # Swap image channels dimension from last to first [H, W, C] -> [C, H, W]
-            "BATCH_SIZE": 2048,  # Batch size
+            "BATCH_SIZE": 256,  # Batch size
             "LR": 1e-4,  # Learning rate
             "GAMMA": 0.99,  # Discount factor
             "MEMORY_SIZE": 100000,  # Max memory buffer size
@@ -665,7 +665,7 @@ if __name__ == "__main__":
         action_dim = action_dim[0]
 
         # LOAD PRETRAINED
-        path = "/zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL/epoch_2000_models/DQN/LowLrSelf_.pt"  # Path to saved agent checkpoint
+        path = "/zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL/epoch_1000_models/DQN/v100VictimSelfBigerEps_.pt"  # Path to saved agent checkpoint
         dqn_trained = DQN(
             state_dim=state_dim,
             action_dim=action_dim,
@@ -734,13 +734,13 @@ if __name__ == "__main__":
         episodes_per_epoch = 10
         max_episodes = LESSON["max_train_episodes"]  # Total episodes
         max_steps = 500  # Maximum steps to take in each episode
-        evo_epochs = 20  # Evolution frequency
+        evo_epochs = 10  # Evolution frequency
         save_epochs = 500
         evo_loop = 100  # Number of evaluation episodes
         elite = pop[0]  # Assign a placeholder "elite" agent
         epsilon = 1.0  # Starting epsilon value
         eps_end = 0.1  # Final epsilon value
-        eps_decay = 0.99998  # Epsilon decays
+        eps_decay = 0.9998  # Epsilon decays
         opp_update_counter = 0
 
         if LESSON["pretrained_path"] is not None:
@@ -783,7 +783,7 @@ if __name__ == "__main__":
             wandb.init(
                 # set the wandb project where this run will be logged
                 project="AgileRL",
-                name="{}-AdversarialFixed{}-{}Opposition-CNN-{}".format(
+                name="{}-v1002VictimBiggerEpsPop6{}-{}Opposition-CNN-{}".format(
                     "connect_four_v3",
                     INIT_HP["ALGO"],
                     LESSON["opponent"],
@@ -791,7 +791,7 @@ if __name__ == "__main__":
                 ),
                 # track hyperparameters and run metadata
                 config={
-                    "algo": "Evo HPO Rainbow DQN",
+                    "algo": "DQN",
                     "env": "connect_four_v3",
                     "INIT_HP": INIT_HP,
                     "lesson": LESSON,
@@ -1063,8 +1063,9 @@ if __name__ == "__main__":
                 # Evaluate population vs random actions
                 if pop:
                     best_agent = pop[0]
+            
                 wins_rand, draws_rand, losses_rand = evaluate_agent_vs_random(best_agent, env, games=evo_loop)
-                wins_trained, draws_trained, losses_trained = evaluate_agent_vs_trained(best_agent, env, dqn_trained, games=1000)
+                wins_trained, draws_trained, losses_trained = evaluate_agent_vs_trained(best_agent, env, dqn_trained, games=evo_loop)
                 fitnesses = []
                 win_rates = []
                 fitnesses_trained = []
@@ -1159,10 +1160,10 @@ if __name__ == "__main__":
                         rewards_trained = []
                         for i in range(evo_loop):
                             env.reset()  # Reset environment at start of episode
-                            observation, cumulative_reward, done, truncation, _ = (
+                            observation, cumulative_reward_trained, done, truncation, _ = (
                                 env.last()
                             )
-                            cumulative_reward = -cumulative_reward
+                            cumulative_reward_trained = -cumulative_reward_trained
 
                             player = -1  # Tracker for which player"s turn it is
 
@@ -1171,10 +1172,7 @@ if __name__ == "__main__":
                             opponent = dqn_trained
 
                             # Randomly decide whether agent will go first or second
-                            if random.random() > 0.5:
-                                opponent_first = False
-                            else:
-                                opponent_first = True
+                            opponent_first = i < (evo_loop // 2)
 
                             score = 0
 
@@ -1213,15 +1211,15 @@ if __name__ == "__main__":
                                         eval_actions_hist[action] += 1
 
                                 env.step(action)  # Act in environment
-                                observation, cumulative_reward, done, truncation, _ = (
+                                observation, cumulative_reward_trained, done, truncation, _ = (
                                     env.last()
                                 )
-                                cumulative_reward = -cumulative_reward
+                                cumulative_reward_trained = -cumulative_reward_trained
 
                                 if (player > 0 and opponent_first) or (
                                     player < 0 and not opponent_first
                                 ):
-                                    score_trained = cumulative_reward
+                                    score_trained = cumulative_reward_trained
 
                                 eval_turns_trained += 1
 
@@ -1232,10 +1230,10 @@ if __name__ == "__main__":
 
                             rewards_trained.append(score_trained)
                     mean_fit_trained = np.mean(rewards_trained)
-                    fitnesses_trained.append(mean_fit)
+                    fitnesses_trained.append(mean_fit_trained)
                     #new_epsilon = (1 - np.mean(fitnesses_trained)) ** 2
 
-                    #epsilon = 0.7 * epsilon + 0.2 * new_epsilon
+                    #epsilon = 0.7 * epsilon + 0.3 * new_epsilon
 
             
 
@@ -1290,7 +1288,7 @@ if __name__ == "__main__":
                 pop = mutations.mutation(pop)
 
 
-            if (idx_epi + 1) % 50000 == 0:
+            if (idx_epi + 1) % 1000 == 0:
                     save_path = f"epoch_{idx_epi+1}_{LESSON['save_path']}"
                     os.makedirs(os.path.dirname(save_path), exist_ok=True)
                     elite.saveCheckpoint(save_path)

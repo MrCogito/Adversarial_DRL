@@ -5,9 +5,9 @@ opponent: self
 opponent_pool_size: 1  # Size of opponent pool for self-play
 opponent_upgrade: 600  # Epoch frequency to update opponent pool
 eval_opponent: weak  # 'random', 'weak' or 'strong'
-pretrained_path: models/DQN/lesson12_trained_agent.pt  # Path to pretrained model weights
-save_path: models/DQN/v100Victim2Pop6_.pt  # Path to save trained model
-max_train_episodes: 50000  # Maximum number of training episodes in environment
+pretrained_path: models/DQN/lesson333_trained_agent.pt  # Path to pretrained model weights
+save_path: models/DQN/v100BigerEpsDecVictim2Pop6_.pt  # Path to save trained model
+max_train_episodes: 100000  # Maximum number of training episodes in environment
 
 ## Game specific:
 buffer_warm_up: false  # Fill replay buffer with random experiences
