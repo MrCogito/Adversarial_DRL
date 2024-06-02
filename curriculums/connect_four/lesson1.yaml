@@ -4,15 +4,15 @@
 opponent: random
 opponent_pool_size:       # Size of opponent pool for self-play
 opponent_upgrade:       # Epoch frequency to update opponent pool
-eval_opponent: weak       # 'random', 'weak' or 'strong'
+eval_opponent:       # 'random', 'weak' or 'strong'
 pretrained_path:       # Path to pretrained model weights
 save_path: models/DQN/lesson12_trained_agent.pt  # Path to save trained model
-max_train_episodes: 15000  # Maximum number of training episodes in environment
+max_train_episodes: 0  # Maximum number of training episodes in environment
 
 ## Game specific:
-buffer_warm_up: false  # Fill replay buffer with random experiences
+buffer_warm_up: true  # Fill replay buffer with random experiences
 warm_up_opponent: random  # Difficulty level of warm up experiences
-agent_warm_up: 30000  # Number of epochs to warm up agent by training on random experiences
+agent_warm_up: 1  # Number of epochs to warm up agent by training on random experiences
 block_vert_coef: 4  # How many times more likely to block vertically
 rewards:  # Rewards for different outcomes
     win: 1

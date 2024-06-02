@@ -604,7 +604,7 @@ if __name__ == "__main__":
 
     for lesson_number in range(1, 5):
         # Load lesson for curriculum
-        with open(f"./curriculumsVictim/connect_four/lesson{lesson_number}.yaml") as file:
+        with open(f"./curriculums/connect_four/lesson{lesson_number}.yaml") as file:
             LESSON = yaml.safe_load(file)
 
         # Define the network configuration
@@ -665,14 +665,14 @@ if __name__ == "__main__":
         action_dim = action_dim[0]
 
         # LOAD PRETRAINED
-        path = "/zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL/epoch_1000_models/DQN/v100VictimSelfBigerEps_.pt"  # Path to saved agent checkpoint
-        dqn_trained = DQN(
-            state_dim=state_dim,
-            action_dim=action_dim,
-            one_hot=one_hot,
-            device=device,
-        )  # Adjust parameters as needed
-        dqn_trained.loadCheckpoint(path) 
+        # path = "/zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL/epoch_1000_models/DQN/v100VictimSelfBigerEps_.pt"  # Path to saved agent checkpoint
+        # dqn_trained = DQN(
+        #     state_dim=state_dim,
+        #     action_dim=action_dim,
+        #     one_hot=one_hot,
+        #     device=device,
+        # )  # Adjust parameters as needed
+        # dqn_trained.loadCheckpoint(path) 
 
         # Create a population ready for evolutionary hyper-parameter optimisation
         pop = initialPopulation(
@@ -734,7 +734,7 @@ if __name__ == "__main__":
         episodes_per_epoch = 10
         max_episodes = LESSON["max_train_episodes"]  # Total episodes
         max_steps = 500  # Maximum steps to take in each episode
-        evo_epochs = 10  # Evolution frequency
+        evo_epochs = 20  # Evolution frequency
         save_epochs = 500
         evo_loop = 100  # Number of evaluation episodes
         elite = pop[0]  # Assign a placeholder "elite" agent
@@ -783,7 +783,7 @@ if __name__ == "__main__":
             wandb.init(
                 # set the wandb project where this run will be logged
                 project="AgileRL",
-                name="{}-v1002VictimBiggerEpsPop6{}-{}Opposition-CNN-{}".format(
+                name="{}-v100VictimClassic{}-{}Opposition-CNN-{}".format(
                     "connect_four_v3",
                     INIT_HP["ALGO"],
                     LESSON["opponent"],
@@ -1064,8 +1064,8 @@ if __name__ == "__main__":
                 if pop:
                     best_agent = pop[0]
             
-                wins_rand, draws_rand, losses_rand = evaluate_agent_vs_random(best_agent, env, games=evo_loop)
-                wins_trained, draws_trained, losses_trained = evaluate_agent_vs_trained(best_agent, env, dqn_trained, games=evo_loop)
+                #wins_rand, draws_rand, losses_rand = evaluate_agent_vs_random(best_agent, env, games=evo_loop)
+                #wins_trained, draws_trained, losses_trained = evaluate_agent_vs_trained(best_agent, env, dqn_trained, games=evo_loop)
                 fitnesses = []
                 win_rates = []
                 fitnesses_trained = []
@@ -1155,85 +1155,85 @@ if __name__ == "__main__":
                 fitnesses_trained = []
 
                 ## Eval on trained
-                for agent in pop:
-                    with torch.no_grad():
-                        rewards_trained = []
-                        for i in range(evo_loop):
-                            env.reset()  # Reset environment at start of episode
-                            observation, cumulative_reward_trained, done, truncation, _ = (
-                                env.last()
-                            )
-                            cumulative_reward_trained = -cumulative_reward_trained
+                # for agent in pop:
+                #     with torch.no_grad():
+                #         rewards_trained = []
+                #         for i in range(evo_loop):
+                #             env.reset()  # Reset environment at start of episode
+                #             observation, cumulative_reward_trained, done, truncation, _ = (
+                #                 env.last()
+                #             )
+                #             cumulative_reward_trained = -cumulative_reward_trained
 
-                            player = -1  # Tracker for which player"s turn it is
+                #             player = -1  # Tracker for which player"s turn it is
 
-                            # Create opponent of desired difficulty
-                            dqn_trained.loadCheckpoint(path) 
-                            opponent = dqn_trained
+                #             # Create opponent of desired difficulty
+                #             dqn_trained.loadCheckpoint(path) 
+                #             opponent = dqn_trained
 
-                            # Randomly decide whether agent will go first or second
-                            opponent_first = i < (evo_loop // 2)
+                #             # Randomly decide whether agent will go first or second
+                #             opponent_first = i < (evo_loop // 2)
 
-                            score = 0
+                #             score = 0
 
-                            for idx_step in range(max_steps):
-                                action_mask = observation["action_mask"]
-                                if player < 0:
-                                    if opponent_first:
-                                        if LESSON["eval_opponent"] == "random":
-                                            action = opponent.getAction(action_mask)
-                                        else:
-                                            action = opponent.getAction(state, 0, action_mask)[0] 
-                                    else:
-                                        state = np.moveaxis(
-                                            observation["observation"], [-1], [-3]
-                                        )
-                                        state = np.expand_dims(state, 0)
-                                        action = agent.getAction(state, 0, action_mask)[
-                                            0
-                                        ]  # Get next action from agent
-                                        eval_actions_hist[action] += 1
-                                if player > 0:
-                                    if not opponent_first:
-                                        if LESSON["eval_opponent"] == "random":
-                                            action = opponent.getAction(action_mask)
-                                        else:
-                                            opponent.getAction(state, 0, action_mask)[0] 
-                                    else:
-                                        state = np.moveaxis(
-                                            observation["observation"], [-1], [-3]
-                                        )
-                                        state[[0, 1], :, :] = state[[1, 0], :, :]
-                                        state = np.expand_dims(state, 0)
-                                        action = agent.getAction(state, 0, action_mask)[
-                                            0
-                                        ]  # Get next action from agent
-                                        eval_actions_hist[action] += 1
+                #             for idx_step in range(max_steps):
+                #                 action_mask = observation["action_mask"]
+                #                 if player < 0:
+                #                     if opponent_first:
+                #                         if LESSON["eval_opponent"] == "random":
+                #                             action = opponent.getAction(action_mask)
+                #                         else:
+                #                             action = opponent.getAction(state, 0, action_mask)[0] 
+                #                     else:
+                #                         state = np.moveaxis(
+                #                             observation["observation"], [-1], [-3]
+                #                         )
+                #                         state = np.expand_dims(state, 0)
+                #                         action = agent.getAction(state, 0, action_mask)[
+                #                             0
+                #                         ]  # Get next action from agent
+                #                         eval_actions_hist[action] += 1
+                #                 if player > 0:
+                #                     if not opponent_first:
+                #                         if LESSON["eval_opponent"] == "random":
+                #                             action = opponent.getAction(action_mask)
+                #                         else:
+                #                             opponent.getAction(state, 0, action_mask)[0] 
+                #                     else:
+                #                         state = np.moveaxis(
+                #                             observation["observation"], [-1], [-3]
+                #                         )
+                #                         state[[0, 1], :, :] = state[[1, 0], :, :]
+                #                         state = np.expand_dims(state, 0)
+                #                         action = agent.getAction(state, 0, action_mask)[
+                #                             0
+                #                         ]  # Get next action from agent
+                #                         eval_actions_hist[action] += 1
 
-                                env.step(action)  # Act in environment
-                                observation, cumulative_reward_trained, done, truncation, _ = (
-                                    env.last()
-                                )
-                                cumulative_reward_trained = -cumulative_reward_trained
+                #                 env.step(action)  # Act in environment
+                #                 observation, cumulative_reward_trained, done, truncation, _ = (
+                #                     env.last()
+                #                 )
+                #                 cumulative_reward_trained = -cumulative_reward_trained
 
-                                if (player > 0 and opponent_first) or (
-                                    player < 0 and not opponent_first
-                                ):
-                                    score_trained = cumulative_reward_trained
+                #                 if (player > 0 and opponent_first) or (
+                #                     player < 0 and not opponent_first
+                #                 ):
+                #                     score_trained = cumulative_reward_trained
 
-                                eval_turns_trained += 1
+                #                 eval_turns_trained += 1
 
-                                if done or truncation:
-                                    break
+                #                 if done or truncation:
+                #                     break
 
-                                player *= -1
+                #                 player *= -1
 
-                            rewards_trained.append(score_trained)
-                    mean_fit_trained = np.mean(rewards_trained)
-                    fitnesses_trained.append(mean_fit_trained)
-                    #new_epsilon = (1 - np.mean(fitnesses_trained)) ** 2
+                #             rewards_trained.append(score_trained)
+                #     mean_fit_trained = np.mean(rewards_trained)
+                #     fitnesses_trained.append(mean_fit_trained)
+                #     #new_epsilon = (1 - np.mean(fitnesses_trained)) ** 2
 
-                    #epsilon = 0.7 * epsilon + 0.3 * new_epsilon
+                #     #epsilon = 0.7 * epsilon + 0.3 * new_epsilon
 
             
 
@@ -1269,15 +1269,15 @@ if __name__ == "__main__":
                     "train/opponent_updates": opp_update_counter,
                     "eval/mean_fitness_eval": np.mean(fitnesses),
                     "eval/best_fitness_eval": np.max(fitnesses),
-                    "eval_trained/mean_fitness_eval": np.mean(fitnesses_trained),
-                    "eval_trained/best_fitness_eval": np.max(fitnesses_trained),
+                    #"eval_trained/mean_fitness_eval": np.mean(fitnesses_trained),
+                    #"eval_trained/best_fitness_eval": np.max(fitnesses_trained),
                     "eval/mean_turns_per_game": eval_turns,
-                    "eval_rand/wins_vs_random": wins_rand,
-                    "eval_rand/draws_vs_random": draws_rand,
-                    "eval_rand/loses_vs_random": losses_rand,
-                    "eval_trained/wins_vs_trained": wins_trained,
-                    "eval_trained/draws_vs_trained": draws_trained,
-                    "eval_trained/loses_vs_trained": losses_trained,
+                    # "eval_rand/wins_vs_random": wins_rand,
+                    # "eval_rand/draws_vs_random": draws_rand,
+                    # "eval_rand/loses_vs_random": losses_rand,
+                    # "eval_trained/wins_vs_trained": wins_trained,
+                    # "eval_trained/draws_vs_trained": draws_trained,
+                    # "eval_trained/loses_vs_trained": losses_trained,
                 }
                 wandb_dict.update(train_actions_dict)
                 wandb_dict.update(eval_actions_dict)
