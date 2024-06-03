@@ -88,8 +88,17 @@ Around epoch ~400 it learned how to exploit victim strategy and achieve almost 1
 To ensure that this is not because of "lucky" seed, at the same time, Adversary agent was evaluated against rule-based opponent and it performed much worse that Victim 
 ![image](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/0703d171-034d-47e5-b265-3454b2eb5e58)
 
+By analyzing game, we can see that when Victim was 1st to play, Adversary learned how to block vertical win, and if Victim was 2nd Adversay found interesting pattern that eventually led to win. 
 
+Adversary vs Victim (Victim moves 1st)
+![Adversary_victim_2](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/48524384-2d10-49aa-932d-916ebbe17596)
 
+Adversary vs Victim (Adversary moves 1st)
+![Adversary_victim_1](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/c7204ae8-6b5f-409a-8874-f0d213e546e4)
+
+What is also interesting - when playing against a rule-based opponent that was not trying to push vertical win, the Adversary had trouble finding winning patterns and blocking horizontal wins, which resulted in more "random" games.
+Adversary vs rule-based
+![Adv_random](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/f194848b-fe1e-466e-a58e-91dfb248f954)
 
 
 
