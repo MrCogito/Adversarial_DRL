@@ -56,8 +56,13 @@ While selecting a training environment, several factors were taken into consider
 1. The environment must be competitive and support multi-agent interaction, allowing control over the policies of multiple agents.
 2. The game's dimensionality can not be too small, since this attack method achieve better results in high-dimensional games [Gleave et al. (2019)](https://arxiv.org/abs/1905.10615).
 3. The game's dimensionality can not be to big due to time and resources limitations.
+Given those considerations, [Petting-Zoo Connect Four](https://pettingzoo.farama.org/tutorials/sb3/connect_four/) environment has been chosen.
+Both agents were using same architecture([DQN with masking](https://docs.agilerl.com/en/latest/api/algorithms/dqn.html)) and hyperparameters.
 
-Given those considerations [Petting-Zoo Connect Four](https://pettingzoo.farama.org/tutorials/sb3/connect_four/) environment has been chosen. 
+### Training procedure
+1. Train the victim agent using self-play with 1000 epochs warm-up against the random agent, until the victim agent achieves decent performance. 
+2. Save victim agent
+3. Train adversarial agent using frozen victim's agent policy as an opponent.
 
 
 
