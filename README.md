@@ -74,7 +74,7 @@ After 4000 epochs(evaluation on chart is performed every 10 epochs) agent learne
 <div align="center">
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/b8c8e179-fa09-4dc3-a5d5-2d4d76402fdf" width="85%" height="85%">
 </div>
-The agent's average score is only 0.8, which reflects frequent draws rather than losses.
+After looking at win/draw/lose statistics agent's average score of 0.8 reflects frequent draws rather than losses.
 <div align="center">
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/bc378c73-4ba4-4614-be5b-b01ebcdfe1f6" width="85%" height="85%">
 </div>
