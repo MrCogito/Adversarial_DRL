@@ -60,9 +60,27 @@ Given those considerations, [Petting-Zoo Connect Four](https://pettingzoo.farama
 Both agents were using same architecture([DQN with masking](https://docs.agilerl.com/en/latest/api/algorithms/dqn.html)) and hyperparameters.
 
 ### Training procedure
-1. Train the victim agent using self-play with 1000 epochs warm-up against the random agent, until the victim agent achieves decent performance. 
+1. Train the victim agent using self-play (playing against an older version of itself that was updated every 500 epochs) with 1000 epochs warm-up against the random agent, until the victim agent achieves decent performance. 
 2. Save victim agent
-3. Train adversarial agent using frozen victim's agent policy as an opponent.
+3. Train adversarial agents using frozen victim's agent policy as an opponent.
+
+Agent can score:
++1 for win
+0 for draw
+-1 for lose
+
+
+
+### Results 
+
+After 6000 epochs(evaluation on chart is performed every 10 epochs) agent learned simple strategy that allowed him to achieve score on average 0.8 point per game. 
+![image](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/b8c8e179-fa09-4dc3-a5d5-2d4d76402fdf)
+The agent's average score is only 0.8, which reflects frequent draws rather than losses.
+![image](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/bc378c73-4ba4-4614-be5b-b01ebcdfe1f6)
+By analyzing agent games it can be seen that it learned a simple strategy of building vertical towers to win
+Victim vs Random (all games are won by victim)
+![VictimVsRandom](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/5cfbbd18-886e-4a95-a3d0-4eab7d3788ed)
+It also learned that if opponent is trying to do the same, he can block him 
 
 
 
