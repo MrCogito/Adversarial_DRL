@@ -151,8 +151,7 @@ Because there were no pre-trained agents, the victim model had to be developed f
 - Training code has quick-fixes to ([ bug in Petting-Zoo)]([https://arxiv.org/abs/2211.00241](https://github.com/Farama-Foundation/PettingZoo/issues/114))) which cause agent learn how to loose the game instead of how to win. Example line with fix:
 cumulative_reward = -cumulative_reward
 - Not all models are uploaded to github - all files can be found on DTU server /zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL
-
--Ppong_old folder os there because originally I tried to use the atari-pong environment, but there were no trained agents in petting-zoo environment and agent from other libraries eg. StableBaseline were not compatible with petting-zoo. 
+- pong_old folder os there because originally I tried to use the atari-pong environment, but there were no trained agents in petting-zoo environment and agent from other libraries eg. StableBaseline were not compatible with petting-zoo. 
 Additionally there were no build-in agent to train model in PZ, so I decided that training atari-pong model from scratch will take too much time. 
 
 
