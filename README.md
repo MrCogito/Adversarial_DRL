@@ -1,7 +1,3 @@
-# Adversarial_DRL
-Adversarial attacks in deep reinforcement learning 
-
-
 # Description
 Deep Reinforcement Learning (DRL) has a wide range of applications, such as enabling autonomous cars ([Pan et al., 2020](https://arxiv.org/abs/2002.00444)), discovering optimized matrix multiplication algorithms ([Alon et al., 2022](https://www.nature.com/articles/s41586-022-05172-4)), and achieving superhuman performance in board games like Go ([Silver et al., 2016](https://www.nature.com/articles/nature16961)). Reinforcement Learning (RL) is distinctive as it doesn’t rely on traditional datasets, thus avoiding associated data biases. It learns by interacting within simulated environments and utilizes self-play techniques to improve. However, recent research indicates that, similar to other deep learning models, RL is susceptible to adversarial attacks. The goal of this project is to implement and evaluate adversarial deep learning algorithms. After reviewing possible adversarial attack methods ([Liang et al., 2023](https://ieeexplore.ieee.org/stamp/stamp.jsp?tp=&arnumber=9536399)), the Adversarial Policies method was chosen, introduced by [Gleave et al. (2019)](https://arxiv.org/abs/1905.10615) and further refined by [Wu and Xian (2021)](https://www.usenix.org/conference/usenixsecurity21/presentation/wu-xian). This technique was selected as it mirrors real-life scenarios where an adversary lacks direct access to the victim network and can only manipulate the environment through its actions. Another motivation for this choice was its proven efficacy, demonstrated by outperforming the top algorithms in the game of Go ([Wang et al. (2022)](https://arxiv.org/abs/2211.00241)).
 
@@ -73,39 +69,56 @@ Agent can score:
 
 ### Results 
 **Victim**
+
 After 4000 epochs(evaluation on chart is performed every 10 epochs) agent learned simple strategy that allowed him to achieve score on average 0.8 point per game. 
-![image](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/b8c8e179-fa09-4dc3-a5d5-2d4d76402fdf)
+<div align="center">
+<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/b8c8e179-fa09-4dc3-a5d5-2d4d76402fdf" width="60%" height="60%">
+</div>
 The agent's average score is only 0.8, which reflects frequent draws rather than losses.
-![image](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/bc378c73-4ba4-4614-be5b-b01ebcdfe1f6)
+<div align="center">
+<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/bc378c73-4ba4-4614-be5b-b01ebcdfe1f6" width="60%" height="60%">
+</div>
 By analyzing agent games it can be seen that it learned a simple strategy of building vertical towers to win
-Victim vs Random (all games are won by victim)
-![VictimVsRandom](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/5cfbbd18-886e-4a95-a3d0-4eab7d3788ed)
+<div align="center">
+<p>Victim vs Random (all games are won by victim)</p>
+<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/5cfbbd18-886e-4a95-a3d0-4eab7d3788ed">
+</div>
 
 **Adversary**
+
 Adversarial agent was trained against victim agent from epoch 6000. 
 Around epoch ~400 it learned how to exploit victim strategy and achieve almost 100% win rate. 
-![image](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/287416ab-a547-46a1-9761-62263fe4accc)
+<div align="center">
+<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/287416ab-a547-46a1-9761-62263fe4accc" width="60%" height="60%">
+</div>
 To ensure that this is not because of "lucky" seed, at the same time, Adversary agent was evaluated against rule-based opponent and it performed much worse that Victim 
 ![image](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/0703d171-034d-47e5-b265-3454b2eb5e58)
 
 By analyzing game, we can see that when Victim was 1st to play, Adversary learned how to block vertical win, and if Victim was 2nd Adversay found interesting pattern that eventually led to win. 
 
-Adversary vs Victim (Victim moves 1st)
-![Adversary_victim_2](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/48524384-2d10-49aa-932d-916ebbe17596)
+<div align="center">
+<p><b>Adversary vs Victim (Victim moves 1st)</b>b></p>
+<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/48524384-2d10-49aa-932d-916ebbe17596">
+</div>
 
-Adversary vs Victim (Adversary moves 1st)
-![Adversary_victim_1](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/c7204ae8-6b5f-409a-8874-f0d213e546e4)
+<div align="center">
+<p><b>Adversary vs Victim (Adversary moves 1st)</b>b></p>
+<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/48524384-2d10-49aa-932d-916ebbe17596">
+</div>
 
-What is also interesting - when playing against a rule-based opponent that was not trying to push vertical win, the Adversary had trouble finding winning patterns and blocking horizontal wins, which resulted in more "random" games.
-Adversary vs rule-based
-![Adv_random](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/f194848b-fe1e-466e-a58e-91dfb248f954)
+What is also interesting - when playing against a rule-based opponent that was not trying to push vertical win, the Adversary had trouble finding winning patterns and blocking horizontal wins, which resulted in more "random" looking games.
+<div align="center">
+<p>Adversary vs tule-based (Adversary moves 1st)</p>
+
+<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/f194848b-fe1e-466e-a58e-91dfb248f954">
+</div>
 
 Results are summarized in table below:
-| Match       | Win Rate | Winner  |
+| Match       | Average score| Winner  |
 |-------------|----------|---------|
-| Agent 1 vs 2| 50%      | Agent 2 |
-| Agent 1 vs 3| 75%      | Agent 1 |
-| Agent 2 vs 3| 55%      | Agent 2 |
+| Victim vs rule-based| ~80%      | Victim |
+| Adversarial vs rule-based| ~52%      | Adversarial |
+| Adversarial vs Victim| ~98%      | Adversarial |
 
 ### Discussion
  -- OOD
