@@ -100,8 +100,17 @@ What is also interesting - when playing against a rule-based opponent that was n
 Adversary vs rule-based
 ![Adv_random](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/f194848b-fe1e-466e-a58e-91dfb248f954)
 
+Results are summarized in table below:
+| Match       | Win Rate | Winner  |
+|-------------|----------|---------|
+| Agent 1 vs 2| 50%      | Agent 2 |
+| Agent 1 vs 3| 75%      | Agent 1 |
+| Agent 2 vs 3| 55%      | Agent 2 |
 
-
+### Discussion
+ -- OOD
+ --Future work (train more/stronger agents)
+ -- 
 ### Add 
 - finding out of distribution states
 - theory for dqn
