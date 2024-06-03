@@ -51,6 +51,16 @@ The MDP dynamics will be unknown to the adversary because the victim's policy is
 
 # Implementation
 
+### Training Environemnt
+While selecting a training environment, several factors were taken into consideration:
+1. The environment must be competitive and support multi-agent interaction, allowing control over the policies of multiple agents.
+2. The game's dimensionality can not be too small, since this attack method achieve better results in high-dimensional games [Gleave et al. (2019)](https://arxiv.org/abs/1905.10615).
+3. The game's dimensionality can not be to big due to time and resources limitations.
+
+Given those considerations [Petting-Zoo Connect Four](https://pettingzoo.farama.org/tutorials/sb3/connect_four/) environment has been chosen. 
+
+
+
 ### Add 
 - finding out of distribution states
 - theory for dqn
