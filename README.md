@@ -9,7 +9,7 @@ Adversarial Policy Attacks exploit vulnerabilities in deep reinforcement learnin
 
 ### Training Process
 
-For the [Connect four environment](https://pettingzoo.farama.org/environments/classic/connect_four/) and other similar multi-agent adversary games, the training setup is modeled as a two-player Markov game. The game $M$ is defined as:
+For the [Connect four environment](https://pettingzoo.farama.org/environments/classic/connect_four/) and other similar multi-agent competitive games, the training setup is modeled as a two-player Markov game. The game $M$ is defined as:
 
 $$M = (S, (A_\alpha, A_\nu), T, (R_\alpha, R_\nu))$$
 
@@ -50,6 +50,7 @@ While selecting a training environment, several factors were taken into consider
 1. The environment must be competitive and support multi-agent interaction, allowing control over the policies of multiple agents.
 2. The game's dimensionality can not be too small, since this attack method achieve better results in high-dimensional games [Gleave et al. (2019)](https://arxiv.org/abs/1905.10615).
 3. The game's dimensionality can not be to big due to time and resources limitations.
+   
 Given those considerations, [Petting-Zoo Connect Four](https://pettingzoo.farama.org/tutorials/sb3/connect_four/) environment has been chosen.
 Both agents were using same architecture([DQN with masking](https://docs.agilerl.com/en/latest/api/algorithms/dqn.html)) and hyperparameters.
 
@@ -60,10 +61,10 @@ Both agents were using same architecture([DQN with masking](https://docs.agilerl
 
 Agent can score:
 +1 for win
+
 0 for draw
+
 -1 for lose
-
-
 
 ### Results 
 **Victim**
