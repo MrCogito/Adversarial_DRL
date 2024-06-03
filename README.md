@@ -52,7 +52,37 @@ While selecting a training environment, several factors were taken into consider
 3. The game's dimensionality can not be to big due to time and resources limitations.
    
 Given those considerations, [Petting-Zoo Connect Four](https://pettingzoo.farama.org/tutorials/sb3/connect_four/) environment has been chosen.
-Both agents were using same architecture([DQN with masking](https://docs.agilerl.com/en/latest/api/algorithms/dqn.html)) and hyperparameters.
+Both agents were using same architecture([DQN with masking](https://docs.agilerl.com/en/latest/api/algorithms/dqn.html)) and hyperparameters: 
+'''
+        
+        INIT_HP = {
+            "POPULATION_SIZE": 1,
+            "ALGO": "DQN",  # Algorithm
+            "DOUBLE": True,
+            "BATCH_SIZE": 256,  # Batch size
+            "LR": 0.00005,  # Learning rate
+            "GAMMA": 0.99,  # Discount factor
+            "MEMORY_SIZE": 100000,  # Max memory buffer size
+            "LEARN_STEP": 1,  # Learning frequency
+            "N_STEP": 1,  # Step number to calculate td error
+            "PER": False,  # Use prioritized experience replay buffer
+            "ALPHA": 0.6,  # Prioritized replay buffer parameter
+            "TAU": 0.01,  # For soft update of target parameters
+            "BETA": 0.4,  # Importance sampling coefficient
+            "PRIOR_EPS": 0.000001,  # Minimum priority for sampling
+            "NUM_ATOMS": 51,  # Unit number of support
+            "V_MIN": 0.0,  # Minimum value of support
+            "V_MAX": 200.0,  # Maximum value of support
+        }
+              NET_CONFIG = {
+            "arch": "cnn", 
+            "hidden_size": [64, 64],  
+            "channel_size": [128],  
+            "kernel_size": [4],  
+            "stride_size": [1],  
+            "normalize": False,  
+        }
+'''
 
 ### Training procedure
 1. Train the victim agent using self-play (playing against an older version of itself that was updated every 500 epochs) with 1000 epochs warm-up against the random agent, until the victim agent achieves decent performance. 
@@ -92,7 +122,10 @@ Around epoch ~400 it learned how to exploit victim strategy and achieve almost 1
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/287416ab-a547-46a1-9761-62263fe4accc" width="85%" height="85%">
 </div>
 To ensure that this is not because of "lucky" seed, at the same time, Adversary agent was evaluated against rule-based opponent and it performed much worse that Victim 
-![image](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/0703d171-034d-47e5-b265-3454b2eb5e58)
+
+<div align="center">
+<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/0703d171-034d-47e5-b265-3454b2eb5e58" width="85%" height="85%">
+</div>
 
 By analyzing game, we can see that when Victim was 1st to play, Adversary learned how to block vertical win, and if Victim was 2nd Adversay found interesting pattern that eventually led to win. 
 
@@ -122,25 +155,24 @@ Results are summarized in table below:
 
 ### Discussion 
 Online discussion that included the author of Adversarial Policy Attack, and primary author of KataGo under  [Adversarial Policies Beat Professional-Level Go AIs](https://www.reddit.com/r/MachineLearning/comments/yjryrd/n_adversarial_policies_beat_professionallevel_go/) post give insights why this method works. 
-Researchers agreed that AlphaZero and similar self-play RL applications in general does not give superhuman performance. It does so only in the in-distribution subset of game states that are similar to the one explored during self-play.
+Researchers agreed that AlphaZero and similar self-play RL applications in general does not give superhuman performance. They do so only in the in-distribution subset of game states that are similar to the one explored during self-play.
 They added that there are currently no common methods of exploration or adding noise that can ensure that all of the important parts of state space are covered - especially in environments with large state spaces.
 Additionally, Adam Gleave argue that pure neural net scaling does seem like it's enough to get good average-case performance on-distribution for many tasks and more attention should be put on neurosymbolic/search-like methods. 
 
-Even though we don’t yet have a way to cover all state spaces completely, we can still make our systems tougher for attackers to break into by making attacks more expensive for them. For example, in the study about the game Go, attackers managed to beat the KataGo model using just about 1% of the compute power needed to train the model. In our project, it took about 10% of that compute power. If we make attacking more compute-intensive, it might discourage attackers because it becomes too costly.
+Even though we don’t yet have a way to cover all state spaces completely, there is the possibility of making models more robust to make it harder and more expensive to attack. In the study about the game Go, attackers managed to beat the KataGo model using just about 1% of the computing power needed to train the KataGo model. In this project, it took about 10% of that compute power. Making attack more compute-intensive, might discourage attackers because of the lower cost-benefit ratio. 
 
 Possible defense strategies include:
-- Adding more search to models. The disadvantage of this approach is that more compute will be needed on inference.
+- Adding more search to models. The disadvantage of this approach is that more computing will be needed during inference.
 - Increase the diversity of opponents during self-play training - described in this blog post[Defending against Adversarial Policies in Reinforcement Learning with Alternating Training](https://forum.effectivealtruism.org/posts/YscrJFofd6S8eJGS8/defending-against-adversarial-policies-in-reinforcement)
-- Running multiple iterations of attack and fine-tuning on games vs adversarial. In this paper ([Wang et al. (2022)](https://arxiv.org/abs/2211.00241)) researchers demonstrated that one iteration of fine-tuning does not cover enough game space to make KataGo agent robust enough. An additional drawback of this approach is that too much fine-tuning against adversaries can decrease agent performance against standard opponents.
+- Running multiple iterations of attack and fine-tuning on games vs adversarial. In this paper [Wang et al. (2022)](https://arxiv.org/abs/2211.00241) researchers demonstrated that one iteration of fine-tuning does not cover enough game space to make KataGo agent robust enough. An additional drawback of this approach is that too much fine-tuning against adversaries can decrease agent performance against standard opponents.
 
-The main challange of an Adversarial Policy Attack is that it requires unlimited gray-box access to the victim (Access to actions sampled from victim policy).
+The main challenge of an Adversarial Policy Attack is that it requires unlimited gray-box access to the victim (Access to actions sampled from victim policy).
 For AI systems engaged in games like Go, chess, or poker, it is plausible that an attacker could gain such access. However, in applications involving robotics or autonomous vehicles, obtaining gray-box access may be considerably more challenging, limiting the feasibility of such attacks.
 
-Future improvements in attack methods could effective ways of finding victims out of distribution states, with limited number of victims observation. One approach might involve building an approximate victim model of the victim. Then, perform the attack and transfer it to the real victim model. Here ([Wang et al. (2022)](https://arxiv.org/abs/2211.00241)) it was demonstrated that KataGo attack transferred to other Go models. 
-Other approaches can focus on more effective sampling of victims actions to avoid similar scenarios to occur frequently during the training
+Because of that future improvements in the Adversarial Policy Attack should focus on finding victim's out of distribution states, in which civtim is vulnerable, with a limited number of victim's actions observations. 
 
-Possible attack improvements should focus on effective ways of finding victims out of distribution states, with limited number of victims observation. That may include techniques that firstly create approximate victim model based only on limited number of observations, performing attack on approximated victim and transfer it to real victim (it was demonstrated that attack performed on katago transferred to other go models).
-Other approaches can focus on more effective sampling of victims' actions during training to avoid having too much similar states.
+- One approach might involve building an approximate victim model of the victim. Then, perform the attack and transfer it to the real victim model. Here ([Wang et al. (2022)](https://arxiv.org/abs/2211.00241)) it was demonstrated that KataGo attack transferred to other Go models. 
+- Other approaches can focus on more effective sampling of victims actions to avoid similar scenarios from occurring frequently during the training.
 
 ### Summary and project limitations 
 
@@ -148,8 +180,10 @@ During the project, the deep reinforcement learning model was trained and succes
 Because there were no pre-trained agents, the victim model had to be developed from scratch. Constraints on time and resources resulted in a relatively small network size and limited training duration for the victim model. With additional time for model tuning, extended training periods, and an increase in network size, the performance of the victim's network could have been significantly enhanced.
 
 ## Additional comments 
-- Training code has quick-fixes to ([ bug in Petting-Zoo)]([https://arxiv.org/abs/2211.00241](https://github.com/Farama-Foundation/PettingZoo/issues/114))) which cause agent learn how to loose the game instead of how to win. Example line with fix:
+- Training code has quick-fixes to [bug in Petting-Zoo](https://github.com/Farama-Foundation/PettingZoo/issues/114) which causes the agent to learn how to lose the game instead of how to win. Example line with fix:
+```
 cumulative_reward = -cumulative_reward
+```
 - Not all models are uploaded to github - all files can be found on DTU server /zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL
 - pong_old folder os there because originally I tried to use the atari-pong environment, but there were no trained agents in petting-zoo environment and agent from other libraries eg. StableBaseline were not compatible with petting-zoo. 
 Additionally there were no build-in agent to train model in PZ, so I decided that training atari-pong model from scratch will take too much time. 
