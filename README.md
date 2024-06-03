@@ -60,6 +60,7 @@ Both agents were using same architecture([DQN with masking](https://docs.agilerl
 3. Train adversarial agents using frozen victim's agent policy as an opponent.
 
 Agent can score:
+
 +1 for win
 
 0 for draw
