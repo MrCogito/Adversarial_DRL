@@ -139,16 +139,20 @@ For AI systems engaged in games like Go, chess, or poker, it is plausible that a
 Future improvements in attack methods could effective ways of finding victims out of distribution states, with limited number of victims observation. One approach might involve building an approximate victim model of the victim. Then, perform the attack and transfer it to the real victim model. Here ([Wang et al. (2022)](https://arxiv.org/abs/2211.00241)) it was demonstrated that KataGo attack transferred to other Go models. 
 Other approaches can focus on more effective sampling of victims actions to avoid similar scenarios to occur frequently during the training
 
-I think that possible attack improvements should focus on effective ways of finding victims out of distribution states, with limited number of victims observation. That may include techniques that firstly create approximate victim model based only on limited number of observations, performing attack on approximated victim and transfer it to real victim (it was demonstrated that attack performed on katago transferred to other go models).
+Possible attack improvements should focus on effective ways of finding victims out of distribution states, with limited number of victims observation. That may include techniques that firstly create approximate victim model based only on limited number of observations, performing attack on approximated victim and transfer it to real victim (it was demonstrated that attack performed on katago transferred to other go models).
 Other approaches can focus on more effective sampling of victims' actions during training to avoid having too much similar states.
 
 ### Summary and project limitations 
 
+During the project, the deep reinforcement learning model was trained and successfully attacked using Adversarial Policy method. 
+Because there were no pre-trained agents, the victim model had to be developed from scratch. Constraints on time and resources resulted in a relatively small network size and limited training duration for the victim model. With additional time for model tuning, extended training periods, and an increase in network size, the performance of the victim's network could have been significantly enhanced.
+
+## Additional comments 
+- Training code has quick-fixes to ([ bug in Petting-Zoo)]([https://arxiv.org/abs/2211.00241](https://github.com/Farama-Foundation/PettingZoo/issues/114))) which cause agent learn how to loose the game instead of how to win. Example line with fix:
+cumulative_reward = -cumulative_reward
+- Not all models are uploaded to github - all files can be found on DTU server /zhome/59/9/198225/Desktop/Adversarial_DRL/Adversarial_DRL
+
+-Ppong_old folder os there because originally I tried to use the atari-pong environment, but there were no trained agents in petting-zoo environment and agent from other libraries eg. StableBaseline were not compatible with petting-zoo. 
+Additionally there were no build-in agent to train model in PZ, so I decided that training atari-pong model from scratch will take too much time. 
 
 
-
-
-# Results
-- [ ] Add victim policy estimation https://www.usenix.org/conference/usenixsecurity21/presentation/wu-xian 
-
-**Multiagent**
