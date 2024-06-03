@@ -72,15 +72,15 @@ Agent can score:
 
 After 4000 epochs(evaluation on chart is performed every 10 epochs) agent learned simple strategy that allowed him to achieve score on average 0.8 point per game. 
 <div align="center">
-<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/b8c8e179-fa09-4dc3-a5d5-2d4d76402fdf" width="60%" height="60%">
+<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/b8c8e179-fa09-4dc3-a5d5-2d4d76402fdf" width="85%" height="85%">
 </div>
 The agent's average score is only 0.8, which reflects frequent draws rather than losses.
 <div align="center">
-<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/bc378c73-4ba4-4614-be5b-b01ebcdfe1f6" width="60%" height="60%">
+<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/bc378c73-4ba4-4614-be5b-b01ebcdfe1f6" width="85%" height="85%">
 </div>
 By analyzing agent games it can be seen that it learned a simple strategy of building vertical towers to win
 <div align="center">
-<p>Victim vs Random (all games are won by victim)</p>
+<p><b>Victim vs Random (all games are won by victim)</b></p>
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/5cfbbd18-886e-4a95-a3d0-4eab7d3788ed">
 </div>
 
@@ -89,7 +89,7 @@ By analyzing agent games it can be seen that it learned a simple strategy of bui
 Adversarial agent was trained against victim agent from epoch 6000. 
 Around epoch ~400 it learned how to exploit victim strategy and achieve almost 100% win rate. 
 <div align="center">
-<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/287416ab-a547-46a1-9761-62263fe4accc" width="60%" height="60%">
+<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/287416ab-a547-46a1-9761-62263fe4accc" width="85%" height="85%">
 </div>
 To ensure that this is not because of "lucky" seed, at the same time, Adversary agent was evaluated against rule-based opponent and it performed much worse that Victim 
 ![image](https://github.com/MrCogito/Adversarial_DRL/assets/22586533/0703d171-034d-47e5-b265-3454b2eb5e58)
@@ -97,18 +97,18 @@ To ensure that this is not because of "lucky" seed, at the same time, Adversary 
 By analyzing game, we can see that when Victim was 1st to play, Adversary learned how to block vertical win, and if Victim was 2nd Adversay found interesting pattern that eventually led to win. 
 
 <div align="center">
-<p><b>Adversary vs Victim (Victim moves 1st)</b>b></p>
+<p><b>Adversary vs Victim (Victim moves 1st)</b></p>
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/48524384-2d10-49aa-932d-916ebbe17596">
 </div>
 
 <div align="center">
-<p><b>Adversary vs Victim (Adversary moves 1st)</b>b></p>
+<p><b>Adversary vs Victim (Adversary moves 1st)</b></p>
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/48524384-2d10-49aa-932d-916ebbe17596">
 </div>
 
 What is also interesting - when playing against a rule-based opponent that was not trying to push vertical win, the Adversary had trouble finding winning patterns and blocking horizontal wins, which resulted in more "random" looking games.
 <div align="center">
-<p>Adversary vs tule-based (Adversary moves 1st)</p>
+<p><b>Adversary vs tule-based (Adversary moves 1st)</b></p>
 
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/f194848b-fe1e-466e-a58e-91dfb248f954">
 </div>
@@ -120,13 +120,32 @@ Results are summarized in table below:
 | Adversarial vs rule-based| ~52%      | Adversarial |
 | Adversarial vs Victim| ~98%      | Adversarial |
 
-### Discussion
- -- OOD
- --Future work (train more/stronger agents)
- -- 
-### Add 
-- finding out of distribution states
-- theory for dqn
+### Discussion 
+Online discussion that included the author of Adversarial Policy Attack, and primary author of KataGo under  [Adversarial Policies Beat Professional-Level Go AIs](https://www.reddit.com/r/MachineLearning/comments/yjryrd/n_adversarial_policies_beat_professionallevel_go/) post give insights why this method works. 
+Researchers agreed that AlphaZero and similar self-play RL applications in general does not give superhuman performance. It does so only in the in-distribution subset of game states that are similar to the one explored during self-play.
+They added that there are currently no common methods of exploration or adding noise that can ensure that all of the important parts of state space are covered - especially in environments with large state spaces.
+Additionally, Adam Gleave argue that pure neural net scaling does seem like it's enough to get good average-case performance on-distribution for many tasks and more attention should be put on neurosymbolic/search-like methods. 
+
+Even though we don’t yet have a way to cover all state spaces completely, we can still make our systems tougher for attackers to break into by making attacks more expensive for them. For example, in the study about the game Go, attackers managed to beat the KataGo model using just about 1% of the compute power needed to train the model. In our project, it took about 10% of that compute power. If we make attacking more compute-intensive, it might discourage attackers because it becomes too costly.
+
+Possible defense strategies include:
+- Adding more search to models. The disadvantage of this approach is that more compute will be needed on inference.
+- Increase the diversity of opponents during self-play training - described in this blog post[Defending against Adversarial Policies in Reinforcement Learning with Alternating Training](https://forum.effectivealtruism.org/posts/YscrJFofd6S8eJGS8/defending-against-adversarial-policies-in-reinforcement)
+- Running multiple iterations of attack and fine-tuning on games vs adversarial. In this paper ([Wang et al. (2022)](https://arxiv.org/abs/2211.00241)) researchers demonstrated that one iteration of fine-tuning does not cover enough game space to make KataGo agent robust enough. An additional drawback of this approach is that too much fine-tuning against adversaries can decrease agent performance against standard opponents.
+
+The main challange of an Adversarial Policy Attack is that it requires unlimited gray-box access to the victim (Access to actions sampled from victim policy).
+For AI systems engaged in games like Go, chess, or poker, it is plausible that an attacker could gain such access. However, in applications involving robotics or autonomous vehicles, obtaining gray-box access may be considerably more challenging, limiting the feasibility of such attacks.
+
+Future improvements in attack methods could effective ways of finding victims out of distribution states, with limited number of victims observation. One approach might involve building an approximate victim model of the victim. Then, perform the attack and transfer it to the real victim model. Here ([Wang et al. (2022)](https://arxiv.org/abs/2211.00241)) it was demonstrated that KataGo attack transferred to other Go models. 
+Other approaches can focus on more effective sampling of victims actions to avoid similar scenarios to occur frequently during the training
+
+I think that possible attack improvements should focus on effective ways of finding victims out of distribution states, with limited number of victims observation. That may include techniques that firstly create approximate victim model based only on limited number of observations, performing attack on approximated victim and transfer it to real victim (it was demonstrated that attack performed on katago transferred to other go models).
+Other approaches can focus on more effective sampling of victims' actions during training to avoid having too much similar states.
+
+### Summary and project limitations 
+
+
+
 
 
 # Results
