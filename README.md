@@ -54,10 +54,20 @@ In simpler terms, Adversary aimed to  maximize the deviation of victims' actions
 While selecting a training environment, several factors were taken into consideration:
 1. The environment must be competitive and support multi-agent interaction, allowing control over the policies of multiple agents.
 2. The game's dimensionality can not be too small, since this attack method achieve better results in high-dimensional games [Gleave et al. (2019)](https://arxiv.org/abs/1905.10615).
-3. The game's dimensionality can not be to big due to time and resources limitations.
-   
-Given those considerations, [Petting-Zoo Connect Four](https://pettingzoo.farama.org/tutorials/sb3/connect_four/) environment has been chosen.
-Both agents were using same architecture([DQN with masking](https://docs.agilerl.com/en/latest/api/algorithms/dqn.html)) and hyperparameters: 
+3. The game's dimensionality can not be to big due to time and resource limitations.
+
+This method proved effective in both continuous (MuJoCo) and discrete (Go) action spaces, showing that it was not limited by the nature of the action space—discrete or continuous.
+Given those considerations, [Petting-Zoo Connect Four](https://pettingzoo.farama.org/tutorials/sb3/connect_four/) environment has been chosen. 
+Game rules from Petting-zoo documentation:
+> Connect Four is a 2-player turn based game, where players must connect four of their tokens vertically, horizontally or diagonally. The players drop their respective token in a column of a standing grid, where each token will fall until it reaches the bottom of the column or reaches an existing token. Players cannot place a token in a full column, and the game ends when either a player has made a sequence of 4 tokens, or when all 7 columns have been filled.
+
+State space of (6x7x3), and action space of 7 seemed to be big enough to perform adversarial policy attack. 
+Atari pong environment was also considered, but because its observation size (210x160x3) is larger and there were no pre-trained deep-learning agents available, it was not chosen due to time and resource limitations during this project. 
+
+
+Both agents were using same architecture([DQN with masking](https://docs.agilerl.com/en/latest/api/algorithms/dqn.html))
+The architecture is a Convolutional Neural Network with an input layer accepting a 6x7 grid and two hidden layers, each with 64 units followed by an output layer of size 7 corresponding to possible actions in the environment.
+All hyperparameters: 
 '''
         
         INIT_HP = {
@@ -88,6 +98,9 @@ Both agents were using same architecture([DQN with masking](https://docs.agilerl
             "normalize": False,  
         }
 '''
+
+To maintain a consistent perspective regardless of player turn, observations are flipped and transformed accordingly. This step ensures that the agent always perceives the board from the same point of view, simplifying the learning process.
+
 
 ### Training procedure
 1. Train the victim agent using self-play (playing against an older version of itself that was updated every 500 epochs) with 1000 epochs warm-up against the random agent, until the victim agent achieves decent performance. 
@@ -126,7 +139,8 @@ Around epoch 400 it learned how to exploit victim strategy and achieve 98.8% win
 <div align="center">
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/287416ab-a547-46a1-9761-62263fe4accc" width="85%" height="85%">
 </div>
-To ensure that this is not because of "lucky" seed, at the same time, Adversary agent was evaluated against rule-based opponent and it performed much worse that Victim 
+To ensure that this is not because of "lucky" seed, at the same time, Adversary agent was evaluated 
+gainst rule-based opponent and it performed much worse that Victim 
 
 <div align="center">
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/0703d171-034d-47e5-b265-3454b2eb5e58" width="85%" height="85%">
@@ -136,17 +150,17 @@ By analyzing game, we can see that when Victim was 1st to play, Adversary learne
 
 <div align="center">
 <p><b>Adversary vs Victim (Victim moves 1st)</b></p>
-<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/48524384-2d10-49aa-932d-916ebbe17596">
+<img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/7855d49d-90f9-4179-a512-dc00987e7453">
 </div>
 
 <div align="center">
-<p><b>Adversary vs Victim (Adversary moves 1st)</b></p>
+<p><b>Adversary vs Victim (Adversary moves 2nd)</b></p>
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/48524384-2d10-49aa-932d-916ebbe17596">
 </div>
 
 What is also interesting - when playing against a rule-based opponent that was not trying to push vertical win, the Adversary had trouble finding winning patterns and blocking horizontal wins, which resulted in more "random" looking games.
 <div align="center">
-<p><b>Adversary vs tule-based (Adversary moves 1st)</b></p>
+<p><b>Adversary vs rule-based (Adversary moves 1st)</b></p>
 
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/f194848b-fe1e-466e-a58e-91dfb248f954">
 </div>
