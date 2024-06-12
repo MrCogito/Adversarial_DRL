@@ -57,7 +57,9 @@ While selecting a training environment, several factors were taken into consider
 3. The game's dimensionality can not be to big due to time and resource limitations.
 
 This method proved effective in both continuous (MuJoCo) and discrete (Go) action spaces, showing that it was not limited by the nature of the action space—discrete or continuous.
+
 Given those considerations, [Petting-Zoo Connect Four](https://pettingzoo.farama.org/tutorials/sb3/connect_four/) environment has been chosen. 
+
 Game rules from Petting-zoo documentation:
 > Connect Four is a 2-player turn based game, where players must connect four of their tokens vertically, horizontally or diagonally. The players drop their respective token in a column of a standing grid, where each token will fall until it reaches the bottom of the column or reaches an existing token. Players cannot place a token in a full column, and the game ends when either a player has made a sequence of 4 tokens, or when all 7 columns have been filled.
 
