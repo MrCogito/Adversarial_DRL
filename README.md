@@ -9,7 +9,7 @@ Adversarial Policy Attacks exploit vulnerabilities in deep reinforcement learnin
 
 ### Training Process
 
-For the [Connect four environment](https://pettingzoo.farama.org/environments/classic/connect_four/) and other similar multi-agent competitive games, the training setup is modeled as a two-player Markov game. The game $M$ is defined as:
+For multi-agent competitive games, the training setup can be modeled as a two-player Markov game. The game $M$ is defined as:
 
 $$M = (S, (A_\alpha, A_\nu), T, (R_\alpha, R_\nu))$$
 
