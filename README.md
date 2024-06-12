@@ -3,9 +3,9 @@ Deep Reinforcement Learning (DRL) has a wide range of applications, such as enab
 
 # Theory 
 Adversarial Policy Attacks exploit vulnerabilities in deep reinforcement learning (DRL) agents in multi-agent RL settings. In this method, the adversarial RL agent acts according to adversarial policy to create natural observations in the environment that are adversarial for the victim. These cause different activations in the victim's policy network, leading the victim to lose by taking actions that seem random and uncoordinated. 
-### Asumptions 
-1. The adversary is allowed unlimited black-box access to the actions sampled from victims policy, but do not have any white-box information such as weights or activations.
-2. The victim follows fixed stochastic policy with static weights, reflecting common practices in deploying RL models to prevent new issues from developing during retraining.
+### Assumptions 
+1. The adversary is allowed unlimited access to the actions sampled from the victims' policy (gray-box access) but does not have any white-box information such as weights or activations.
+2. The victim follows a fixed stochastic policy with static weights, reflecting common practices in deploying RL models to prevent new issues from developing during retraining.
 
 ### Training Process
 
@@ -36,12 +36,17 @@ $$
 
 The goal of the adversary is to find a policy $\pi_\alpha$ that maximizes the sum of discounted rewards:
 
-$$\max_{\pi_\alpha} \sum_{t=0}^{\infty} \gamma^t R_\alpha(s^{(t)}, a^{(t)}_\alpha, s^{(t+1)})$$
+$$\max_{\pi_\alpha} \sum_{t=0}^{\infty} \gamma^t R_\alpha(s^{(t)}, a^{(t)}_\alpha, s^{(t+1)})     \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \       (1)     $$ 
 
 where $s^{(t+1)}$ is the next state, $a^{(t)}_\alpha$ is the adversary's action, and $\gamma$ is the discount factor.
 
-The MDP dynamics will be unknown to the adversary because the victim's policy is a black-box. Thus, the adversary must solve a reinforcement learning problem to learn a policy that maximizes its rewards.
+The MDP dynamics will be unknown to the adversary because it has access only to actions sampled from the victim's policy. Thus, the adversary must solve a reinforcement learning problem to learn a policy that maximizes its rewards.
 
+
+The study by [Gleave et al. (2019)](https://arxiv.org/abs/1905.10615) demonstrated the effectiveness of adversarial policies in zero-sum robotics games using the [MuJoCo](https://mujoco.org/) environment. During the training, Proximal Policy Optimization was used to maximize Equation 1 described above.  After each episode adversary was given sparse reward - positive for wins and negative for losses and ties. Those trained Adversarial policies reliably won against most victim policies and outperformed the pre-trained [Zoo baseline]([https://arxiv.org/abs/1905.10615](https://arxiv.org/abs/1710.03748))  for a majority of environments and victims.
+
+[Wu and Xian (2021)](https://www.usenix.org/conference/usenixsecurity21/presentation/wu-xian). expanded on earlier research by introducing a method where the adversarial policy not only aims to win but also maximizes the deviation in the victim's actions, leading to suboptimal performance. They enhanced the standard loss function, traditionally based only on game outcomes, with a new term comprising two components: the first measures the deviation in the victim's policy, which the adversary tried to maximize; the second measures the variation added to the observations, which the adversary tried to minimize.
+In simpler terms, Adversary aimed to  maximize the deviation of victims' actions using minimal effort. This method, evaluated in [MuJoCo](https://mujoco.org/) and  [RoboSchool Pong]( https://openai.com/index/roboschool/), improved win rates and outperformed the standard adversarial policy attack.
 
 # Implementation
 
