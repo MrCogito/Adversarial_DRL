@@ -105,11 +105,11 @@ Agent can score:
 ### Results 
 **Victim**
 
-After 4000 epochs(evaluation on chart is performed every 10 epochs) agent learned simple strategy that allowed him to achieve score on average 0.8 point per game. 
+After 4000 epochs(evaluation on chart is performed every 10 epochs) agent learned simple strategy that allowed him to achieve score on average 0.78 point per game. 
 <div align="center">
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/b8c8e179-fa09-4dc3-a5d5-2d4d76402fdf" width="85%" height="85%">
 </div>
-After looking at win/draw/lose statistics agent's average score of 0.8 reflects frequent draws rather than losses.
+After looking at win/draw/lose statistics agent's average score of 0.78 reflects frequent draws rather than losses.
 <div align="center">
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/bc378c73-4ba4-4614-be5b-b01ebcdfe1f6" width="85%" height="85%">
 </div>
@@ -122,7 +122,7 @@ By analyzing agent games it can be seen that it learned a simple strategy of bui
 **Adversary**
 
 Adversarial agent was trained against victim agent from epoch 6000. 
-Around epoch ~400 it learned how to exploit victim strategy and achieve almost 100% win rate. 
+Around epoch 400 it learned how to exploit victim strategy and achieve 98.8% win rate. 
 <div align="center">
 <img src="https://github.com/MrCogito/Adversarial_DRL/assets/22586533/287416ab-a547-46a1-9761-62263fe4accc" width="85%" height="85%">
 </div>
@@ -154,9 +154,9 @@ What is also interesting - when playing against a rule-based opponent that was n
 Results are summarized in table below:
 | Match       | Average score| Winner  |
 |-------------|----------|---------|
-| Victim vs rule-based| ~80%      | Victim |
-| Adversarial vs rule-based| ~52%      | Adversarial |
-| Adversarial vs Victim| ~98%      | Adversarial |
+| Victim vs rule-based| 78%      | Victim |
+| Adversarial vs rule-based| 55.4%      | Adversarial |
+| Adversarial vs Victim| 98.8%      | Adversarial |
 
 ### Discussion 
 Online discussion that included the author of Adversarial Policy Attack, and primary author of KataGo under  [Adversarial Policies Beat Professional-Level Go AIs](https://www.reddit.com/r/MachineLearning/comments/yjryrd/n_adversarial_policies_beat_professionallevel_go/) post give insights why this method works. 
